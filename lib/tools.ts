@@ -24,16 +24,15 @@ import PayloadGenerator from "@/components/tools/PayloadGenerator";
  * The sidebar and the main view both read from this list, so everything else
  * updates automatically. That is the "scalable, easy to add tools" design.
  */
-export type Tool = {
-  id: string; // stable key, also used in the URL hash
-  name: string; // label in the sidebar
-  blurb: string; // one line description
-  category: string; // used to group items in the sidebar
-  icon: LucideIcon;
-  component: ComponentType;
-};
-
 export const tools: Tool[] = [
+  {
+    id: "payloads",
+    name: "Payload Reference",
+    blurb: "Reference payloads mapped to risk and controls.",
+    category: "Recon",
+    icon: Bug,
+    component: PayloadGenerator,
+  },
   {
     id: "base64",
     name: "Base64",
