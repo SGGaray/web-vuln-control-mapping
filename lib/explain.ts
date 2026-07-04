@@ -11,6 +11,9 @@ export type PayloadExplanation = {
   summary: string; // one or two lines, the gist
   why: string; // high level reason the class of flaw exists
   when: string; // practical context for an authorized test
+  owasp?: string; // OWASP Top 10 2021 category
+  control?: string; // one mapped control, NIST or ISO 27001
+  mitigation?: string; // one line, the practical fix
 };
 
 export const explanations: Record<string, PayloadExplanation> = {
