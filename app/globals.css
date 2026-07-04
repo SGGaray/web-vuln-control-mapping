@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Design tokens. Everything is grayscale on purpose. The palette climbs from
+  near black up to near white, and brightness alone signals hierarchy.
+*/
+:root {
+  --base: #0a0a0b; /* page background */
+  --surface: #111113; /* panels */
+  --raised: #1a1a1d; /* hover, active, inputs */
+  --line: #262629; /* borders */
+  --muted: #6f6f78; /* secondary text */
+  --fg: #d6d6db; /* primary text */
+  --bright: #f4f4f6; /* near white, the closest thing to an accent */
+
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code",
+    "Fira Code", Menlo, Consolas, monospace;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+}
+
+html,
+body {
+  background: var(--base);
+  color: var(--fg);
+  font-family: var(--font-sans);
+}
+
+/* A quiet grid texture in the background keeps the empty space from feeling flat. */
+body {
+  background-image: linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 44px 44px;
+  background-position: -1px -1px;
+  /* Fade the grid so it reads as texture, not a table. */
+  background-attachment: fixed;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(
+    120% 90% at 50% 0%,
+    transparent 0%,
+    var(--base) 70%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Slim monochrome scrollbars to match the console feel. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #34343a;
+}
+
+/* Visible keyboard focus. Accessibility floor, not optional. */
+:focus-visible {
+  outline: 1px solid var(--bright);
+  outline-offset: 2px;
+}
+
+/* Respect users who ask for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@layer components {
+  /* Shared input styling so every tool field looks identical. */
+  .io {
+    @apply w-full rounded bg-raised border border-line px-3 py-2.5 font-mono text-sm text-fg
+      placeholder:text-muted focus:border-muted focus:outline-none transition-colors;
+  }
+
+  /* The label above every field. Uppercase, tracked, muted. */
+  .eyebrow {
+    @apply text-[10px] font-mono uppercase tracking-[0.18em] text-muted;
+  }
+
+  /* Buttons across the app share this base. */
+  .btn {
+    @apply inline-flex items-center gap-2 rounded border border-line bg-raised px-3 py-1.5
+      font-mono text-xs text-fg hover:border-muted hover:text-bright active:translate-y-px
+      transition-colors disabled:opacity-40 disabled:pointer-events-none;
+  }
+
+  /* Terminal style output block. */
+  .terminal {
+    @apply rounded border border-line bg-black/40 p-3 font-mono text-sm text-bright
+      whitespace-pre-wrap break-all leading-relaxed;
+  }
+}
