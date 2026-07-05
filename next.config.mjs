@@ -1,8 +1,13 @@
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Nothing exotic here. Defaults keep the MVP simple and predictable.
   reactStrictMode: true,
-
+  outputFileTracingRoot: __dirname,
   async headers() {
     return [
       {
