@@ -2,7 +2,7 @@
 
 An educational reference of common web application vulnerabilities (XSS, SQL injection, command injection). Each entry explains how the attack works, why it works, and which control and framework address it.
 
-[Live demo](https://web-vuln-control-mapping-mauve.vercel.app)
+[Live demo](https://web-vuln-control-mapping.vercel.app)
 
 ![Payload reference with filters](docs/hero.png)
 
