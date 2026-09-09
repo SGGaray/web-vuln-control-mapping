@@ -15,9 +15,8 @@ import {
   payloadCategories,
   payloadContexts,
   allTags,
-  type Payload,
+  type PayloadRecord,
 } from "@/lib/payloads";
-import { explanations } from "@/lib/explain";
 import {
   getMappingBundle,
   type MappingRelationship,
@@ -33,6 +32,7 @@ import FacetRow from "@/components/ui/FacetRow";
 import { useLocale } from "@/lib/i18n/context";
 import { payloadContextKey, relationshipKey } from "@/lib/i18n/presentation";
 import type { PayloadContext } from "@/lib/payloads";
+import { getMappingContent, getPayloadContent } from "@/lib/i18n/content";
 
 // Returns a toggler that adds or removes a value in a Set backed filter,
 // producing a fresh Set so React sees a new reference. Shared by every facet.
@@ -62,9 +62,9 @@ function relationshipStyle(relationship: MappingRelationship): string {
   }
 }
 
-function ExplainDetails({ payload }: { payload: Payload }) {
-  const { t } = useLocale();
-  const explanation = explanations[payload.id];
+function ExplainDetails({ payload }: { payload: PayloadRecord }) {
+  const { locale, t } = useLocale();
+  const explanation = getPayloadContent(locale, payload.id);
   const bundle = getMappingBundle(payload.category);
 
   return (
@@ -105,40 +105,42 @@ function ExplainDetails({ payload }: { payload: Payload }) {
           </div>
         </div>
 
-        {bundle.mappings.map((mapping) => (
-          <section
-            key={`${mapping.framework}:${mapping.controlId}`}
-            className="flex flex-col gap-2 rounded border border-line bg-surface p-3"
-          >
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono text-xs text-bright">
-                {mapping.framework} {mapping.version} · {mapping.controlId}
-              </span>
-              <span
-                className={`rounded border px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider ${relationshipStyle(
-                  mapping.relationship
-                )}`}
-              >
-                {t(relationshipKey(mapping.relationship))}
-              </span>
-            </div>
-            <p className="text-xs font-medium text-fg">{mapping.title}</p>
-            <p className="text-xs leading-relaxed text-fg">
-              {mapping.rationale}
-            </p>
-            <p className="text-xs leading-relaxed text-muted">
-              {t("common.limitation")}: {mapping.limitation}
-            </p>
-            <a
-              href={mapping.source.url}
-              target="_blank"
-              rel="noreferrer"
-              className="w-fit font-mono text-[10px] text-muted underline decoration-line underline-offset-4 hover:text-bright"
+        {bundle.mappings.map((mapping) => {
+          const content = getMappingContent(locale, payload.category, mapping.contentKey);
+          return (
+            <section
+              key={`${mapping.framework}:${mapping.controlId}`}
+              className="flex flex-col gap-2 rounded border border-line bg-surface p-3"
             >
-              {t("common.source")}: {mapping.source.label} · {t("mappings.provenance.official")}
-            </a>
-          </section>
-        ))}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-mono text-xs text-bright">
+                  {mapping.framework} {mapping.version} · {mapping.controlId}
+                </span>
+                <span
+                  className={`rounded border px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider ${relationshipStyle(
+                    mapping.relationship
+                  )}`}
+                >
+                  {t(relationshipKey(mapping.relationship))}
+                </span>
+              </div>
+              <p className="text-xs font-medium text-fg">{mapping.title}</p>
+              <p className="text-xs leading-relaxed text-fg">{content.rationale}</p>
+              <p className="text-xs leading-relaxed text-muted">
+                {t("common.limitation")}: {content.limitation}
+              </p>
+              <a
+                href={mapping.source.url}
+                target="_blank"
+                rel="noreferrer"
+                className="w-fit font-mono text-[10px] text-muted underline decoration-line underline-offset-4 hover:text-bright"
+              >
+                {t("common.source")}: {mapping.source.label} ·{" "}
+                {t("mappings.provenance.official")}
+              </a>
+            </section>
+          );
+        })}
       </div>
     </div>
   );
@@ -187,7 +189,7 @@ function Highlight({ text, query }: { text: string; query: string }) {
 }
 
 export default function PayloadGenerator() {
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const [category, setCategory] = useState<PayloadCategoryFilter>("All");
   // A set of active tag filters. Empty means "no tag filter".
   const [tags, setTags] = useState<Set<string>>(new Set());
@@ -228,10 +230,10 @@ export default function PayloadGenerator() {
       countValues(
         payloads,
         [{ values: getPayloadTagValues, selected: tags }],
-        buildPayloadPredicates(category, q),
+        buildPayloadPredicates(category, q, locale),
         getPayloadContextValues
       ),
-    [category, q, tags]
+    [category, locale, q, tags]
   );
 
   // Tag counts: everything except the tag facet. Recomputes only when
@@ -241,10 +243,10 @@ export default function PayloadGenerator() {
       countValues(
         payloads,
         [{ values: getPayloadContextValues, selected: contexts }],
-        buildPayloadPredicates(category, q),
+        buildPayloadPredicates(category, q, locale),
         getPayloadTagValues
       ),
-    [category, q, contexts]
+    [category, locale, q, contexts]
   );
 
   // The visible list applies both facets plus the predicates.
@@ -256,9 +258,9 @@ export default function PayloadGenerator() {
           { values: getPayloadContextValues, selected: contexts },
           { values: getPayloadTagValues, selected: tags },
         ],
-        buildPayloadPredicates(category, q)
+        buildPayloadPredicates(category, q, locale)
       ),
-    [category, q, contexts, tags]
+    [category, locale, q, contexts, tags]
   );
 
   return (
@@ -346,11 +348,13 @@ export default function PayloadGenerator() {
 
       {/* Payload cards */}
       <div className="flex flex-col gap-3">
-        {filtered.map((p) => (
-          <article
-            key={p.id}
-            className="flex flex-col gap-3 rounded border border-line bg-surface p-3"
-          >
+        {filtered.map((p) => {
+          const content = getPayloadContent(locale, p.id);
+          return (
+            <article
+              key={p.id}
+              className="flex flex-col gap-3 rounded border border-line bg-surface p-3"
+            >
             <div className="flex items-start justify-between gap-3">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="eyebrow">{p.category}</span>
@@ -376,30 +380,27 @@ export default function PayloadGenerator() {
             </div>
 
             <p className="text-sm text-fg">
-              <Highlight text={p.explanation} query={q} />
+              <Highlight text={content.description} query={q} />
             </p>
 
-            {/* Explain: an inline breakdown. Content is data, pulled from
-                lib/explain.ts and joined by payload id, not hardcoded here. */}
-            {explanations[p.id] && (
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => toggleExplain(p.id)}
-                  aria-expanded={openIds.has(p.id)}
-                  className="inline-flex w-fit items-center gap-1.5 font-mono text-xs text-muted transition-colors hover:text-fg"
-                >
-                  <ChevronDown
-                    size={13}
-                    className={`transition-transform ${
-                      openIds.has(p.id) ? "rotate-180" : ""
-                    }`}
-                  />
-                  {t("payloads.explain")}
-                </button>
+            {/* Localized teaching content joins the technical record by payload id. */}
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => toggleExplain(p.id)}
+                aria-expanded={openIds.has(p.id)}
+                className="inline-flex w-fit items-center gap-1.5 font-mono text-xs text-muted transition-colors hover:text-fg"
+              >
+                <ChevronDown
+                  size={13}
+                  className={`transition-transform ${
+                    openIds.has(p.id) ? "rotate-180" : ""
+                  }`}
+                />
+                {t("payloads.explain")}
+              </button>
 
-                {openIds.has(p.id) && <ExplainDetails payload={p} />}
-              </div>
-            )}
+              {openIds.has(p.id) && <ExplainDetails payload={p} />}
+            </div>
 
             {/* Tags for this payload. Clicking one adds it to the filter. */}
             <div className="flex flex-wrap gap-1.5">
@@ -413,8 +414,9 @@ export default function PayloadGenerator() {
                 </button>
               ))}
             </div>
-          </article>
-        ))}
+            </article>
+          );
+        })}
 
         {filtered.length === 0 && (
           <div className="flex flex-col items-center gap-3 rounded border border-line bg-surface px-3 py-8 text-center">

@@ -8,8 +8,8 @@
  * the command injection samples use harmless demonstrator commands only
  * (id, whoami, sleep), never anything destructive.
  *
- * Each entry has a stable `id`. Deeper explanations live in lib/explain.ts and
- * join to a payload by that id, so content stays decoupled from this data.
+ * Each entry has a stable `id`. Localized teaching copy lives under
+ * lib/i18n/content and joins to a payload by that id.
  *
  * To extend this module, just add entries to the array below. The component
  * and its filters read straight from here.
@@ -31,8 +31,7 @@ export type Payload = {
   category: PayloadCategory;
   context: PayloadContext; // the usual injection point for this example
   value: string; // the reference string itself
-  explanation: string; // one line on what it demonstrates and why it matters
-  tags: string[]; // cross cutting labels for filtering
+  tags: readonly string[]; // cross cutting labels for filtering
 };
 
 export const payloadCategories: PayloadCategory[] = [
@@ -50,15 +49,13 @@ export const payloadContexts: PayloadContext[] = [
   "Cookie",
 ];
 
-export const payloads: Payload[] = [
+export const payloads = [
   /* ----------------------------- XSS ----------------------------- */
   {
     id: "xss-script-basic",
     category: "XSS",
     context: "URL parameter",
     value: "<script>alert(1)</script>",
-    explanation:
-      "The classic reflected test. If it runs, output is not being escaped.",
     tags: ["basic"],
   },
   {
@@ -66,8 +63,6 @@ export const payloads: Payload[] = [
     category: "XSS",
     context: "Form field",
     value: "<img src=x onerror=alert(1)>",
-    explanation:
-      "Uses an event handler to test active attributes when script tags are stripped.",
     tags: ["basic", "event-handler"],
   },
   {
@@ -75,8 +70,6 @@ export const payloads: Payload[] = [
     category: "XSS",
     context: "Cookie",
     value: "<svg onload=alert(1)>",
-    explanation:
-      "An SVG load-handler test for values inserted into an active HTML context.",
     tags: ["basic", "event-handler"],
   },
   {
@@ -84,8 +77,6 @@ export const payloads: Payload[] = [
     category: "XSS",
     context: "URL parameter",
     value: "%3Cscript%3Ealert(1)%3C%2Fscript%3E",
-    explanation:
-      "Percent-encoded markup for tracing transport decoding before a browser sink.",
     tags: ["encoded", "url"],
   },
   {
@@ -93,8 +84,6 @@ export const payloads: Payload[] = [
     category: "XSS",
     context: "Form field",
     value: "&#60;script&#62;alert(1)&#60;/script&#62;",
-    explanation:
-      "Character references for tracing decoding and any later markup insertion.",
     tags: ["encoded", "html-entity"],
   },
   {
@@ -102,8 +91,6 @@ export const payloads: Payload[] = [
     category: "XSS",
     context: "Request body",
     value: "\\u003cscript\\u003ealert(1)\\u003c/script\\u003e",
-    explanation:
-      "Unicode escapes for tracing JSON or JavaScript decoding before an unsafe sink.",
     tags: ["encoded", "unicode"],
   },
   {
@@ -111,8 +98,6 @@ export const payloads: Payload[] = [
     category: "XSS",
     context: "URL parameter",
     value: "<sCrIpT>alert(1)</sCrIpT>",
-    explanation:
-      "Mixed case to slip past a case sensitive blocklist of the word script.",
     tags: ["obfuscated", "case"],
   },
   {
@@ -120,8 +105,6 @@ export const payloads: Payload[] = [
     category: "XSS",
     context: "URL parameter",
     value: "<script>alert(String.fromCharCode(88,83,83))</script>",
-    explanation:
-      "Builds the string from char codes to avoid a literal keyword being flagged.",
     tags: ["obfuscated"],
   },
   {
@@ -129,8 +112,6 @@ export const payloads: Payload[] = [
     category: "XSS",
     context: "Form field",
     value: "<img src=x onerror=\"a=alert;a(1)\">",
-    explanation:
-      "Splits the call through a variable to dodge simple pattern matches.",
     tags: ["obfuscated", "event-handler"],
   },
 
@@ -140,8 +121,6 @@ export const payloads: Payload[] = [
     category: "SQL Injection",
     context: "Form field",
     value: "'",
-    explanation:
-      "A lone quote. The simplest probe: a database error hints at injection.",
     tags: ["basic", "error-based"],
   },
   {
@@ -149,8 +128,6 @@ export const payloads: Payload[] = [
     category: "SQL Injection",
     context: "Form field",
     value: "' OR '1'='1",
-    explanation:
-      "An always true condition, the textbook authentication bypass demo.",
     tags: ["basic", "auth-bypass"],
   },
   {
@@ -158,8 +135,6 @@ export const payloads: Payload[] = [
     category: "SQL Injection",
     context: "URL parameter",
     value: "' OR 1=1 -- ",
-    explanation:
-      "Comments out the rest of the query so only the true condition remains.",
     tags: ["basic", "auth-bypass", "comment"],
   },
   {
@@ -167,8 +142,6 @@ export const payloads: Payload[] = [
     category: "SQL Injection",
     context: "Form field",
     value: "admin' -- ",
-    explanation:
-      "Targets a login by ending the username and commenting out the password check.",
     tags: ["basic", "auth-bypass", "comment"],
   },
   {
@@ -176,8 +149,6 @@ export const payloads: Payload[] = [
     category: "SQL Injection",
     context: "Form field",
     value: "\" OR \"1\"=\"1",
-    explanation:
-      "The double quote variant, for inputs wrapped in double quotes.",
     tags: ["basic", "auth-bypass"],
   },
   {
@@ -185,8 +156,6 @@ export const payloads: Payload[] = [
     category: "SQL Injection",
     context: "URL parameter",
     value: "' UNION SELECT NULL-- ",
-    explanation:
-      "Introduces UNION to learn the column count, the first step in extraction.",
     tags: ["union"],
   },
   {
@@ -194,8 +163,6 @@ export const payloads: Payload[] = [
     category: "SQL Injection",
     context: "HTTP header",
     value: "' OR SLEEP(5)-- ",
-    explanation:
-      "A MySQL delay probe whose repeated, controlled timing difference may signal blind injection.",
     tags: ["time-based", "blind", "mysql"],
   },
 
@@ -205,8 +172,6 @@ export const payloads: Payload[] = [
     category: "Command Injection",
     context: "HTTP header",
     value: "; id",
-    explanation:
-      "Chains a harmless command after a semicolon. id just prints the user.",
     tags: ["basic", "unix", "chaining"],
   },
   {
@@ -214,8 +179,6 @@ export const payloads: Payload[] = [
     category: "Command Injection",
     context: "Form field",
     value: "&& whoami",
-    explanation:
-      "Tests whether a POSIX shell honors a conditional separator before whoami.",
     tags: ["basic", "unix", "chaining"],
   },
   {
@@ -223,8 +186,6 @@ export const payloads: Payload[] = [
     category: "Command Injection",
     context: "URL parameter",
     value: "| whoami",
-    explanation:
-      "Pipes into a second command. Tests whether pipe characters pass through.",
     tags: ["basic", "unix", "pipe"],
   },
   {
@@ -232,8 +193,6 @@ export const payloads: Payload[] = [
     category: "Command Injection",
     context: "Request body",
     value: "$(id)",
-    explanation:
-      "Tests POSIX command substitution when input may reach a shell parser.",
     tags: ["substitution", "unix"],
   },
   {
@@ -241,8 +200,6 @@ export const payloads: Payload[] = [
     category: "Command Injection",
     context: "Request body",
     value: "`id`",
-    explanation:
-      "Backtick substitution, the older form of the same idea.",
     tags: ["substitution", "unix"],
   },
   {
@@ -250,8 +207,6 @@ export const payloads: Payload[] = [
     category: "Command Injection",
     context: "URL parameter",
     value: "; sleep 5",
-    explanation:
-      "A benign delay for blind detection when there is no visible output.",
     tags: ["time-based", "blind", "unix"],
   },
   {
@@ -259,11 +214,12 @@ export const payloads: Payload[] = [
     category: "Command Injection",
     context: "URL parameter",
     value: "& whoami",
-    explanation:
-      "The Windows chaining separator, for cmd.exe style targets.",
     tags: ["basic", "windows", "chaining"],
   },
-];
+] as const satisfies readonly Payload[];
+
+export type PayloadId = (typeof payloads)[number]["id"];
+export type PayloadRecord = (typeof payloads)[number];
 
 /** Every distinct tag, sorted, for the filter bar. */
 export function allTags(): string[] {

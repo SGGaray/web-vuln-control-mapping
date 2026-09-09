@@ -14,6 +14,11 @@ describe("Payload Reference filtering", () => {
     expect(filterPayloads({ query: "MYSQL" }).map(({ id }) => id)).toEqual([
       "sqli-time-sleep",
     ]);
+    expect(
+      filterPayloads({ query: "decodificación de transporte", locale: "es-AR" }).map(
+        ({ id }) => id
+      )
+    ).toEqual(["xss-url-encoded"]);
   });
 
   it("applies OR within a facet", () => {

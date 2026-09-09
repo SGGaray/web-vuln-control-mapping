@@ -1,13 +1,48 @@
 import type { Metadata } from "next";
 import { LocaleProvider } from "@/lib/i18n/context";
+import {
+  siteDescription,
+  siteName,
+  siteTitle,
+  siteUrl,
+  socialTitle,
+} from "@/lib/site";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Mapeo de controles para vulnerabilidades web",
-  description:
-    "Referencia educativa que relaciona vulnerabilidades web comunes con riesgos, controles de gobernanza y marcos como OWASP, NIST e ISO 27001.",
+  metadataBase: new URL(siteUrl),
+  title: siteTitle,
+  description: siteDescription,
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName,
+    title: socialTitle,
+    description: siteDescription,
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "WVCM — referencia educativa de vulnerabilidades y controles web",
+      },
+    ],
+    locale: "es_AR",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: socialTitle,
+    description: siteDescription,
+    images: ["/opengraph-image"],
+  },
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+  },
 };
- 
+
 export default function RootLayout({
   children,
 }: {

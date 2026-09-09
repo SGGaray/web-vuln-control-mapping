@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { explanations } from "./explain";
+import { getMappingContent, getPayloadContent, payloadContentIds } from "./i18n/content";
 import { getMappingBundle } from "./mappings";
-import { payloadCategories, payloads } from "./payloads";
+import { payloadCategories, payloads, type PayloadId } from "./payloads";
 
 const payloadIds = payloads.map(({ id }) => id);
-const explanationIds = Object.keys(explanations);
+const explanationIds = payloadContentIds("en");
+const explanation = (id: PayloadId) => getPayloadContent("en", id);
 
 describe("payload content integrity", () => {
   it("keeps the 23 stable payload records unique and fully explained", () => {
@@ -15,17 +16,17 @@ describe("payload content integrity", () => {
 
   it("keeps timing observations conditional and comparative", () => {
     for (const id of ["sqli-time-sleep", "cmd-sleep"]) {
-      const explanation = explanations[id];
-      expect(explanation.signal).toMatch(/baseline/i);
-      expect(explanation.signal).toMatch(/control/i);
-      expect(explanation.signal).toMatch(/repeated/i);
-      expect(explanation.signal).toMatch(/corroboration/i);
-      expect(explanation.limitations).toMatch(/does not confirm/i);
+      const content = explanation(id as PayloadId);
+      expect(content.signal).toMatch(/baseline/i);
+      expect(content.signal).toMatch(/control/i);
+      expect(content.signal).toMatch(/repeated/i);
+      expect(content.signal).toMatch(/corroboration/i);
+      expect(content.limitations).toMatch(/does not confirm/i);
     }
   });
 
   it("treats an error as a signal rather than SQL injection confirmation", () => {
-    const quoteProbe = explanations["sqli-single-quote"];
+    const quoteProbe = explanation("sqli-single-quote");
     expect(quoteProbe.signal).toMatch(/may indicate/i);
     expect(quoteProbe.limitations).toMatch(/not confirmation/i);
   });
@@ -38,7 +39,7 @@ describe("payload content integrity", () => {
     ];
 
     for (const id of encodedIds) {
-      const content = Object.values(explanations[id]).join(" ");
+      const content = Object.values(explanation(id as PayloadId)).join(" ");
       expect(content).toMatch(/decod/i);
       expect(content).toMatch(/sink|insert/i);
       expect(content).toMatch(/execut|active markup/i);
@@ -54,7 +55,7 @@ describe("payload content integrity", () => {
       "sqli-union-null",
       "sqli-time-sleep",
     ]) {
-      expect(explanations[id].preconditions).toMatch(
+      expect(explanation(id as PayloadId).preconditions).toMatch(
         /dialect|MySQL|query|SQL/
       );
     }
@@ -66,7 +67,7 @@ describe("payload content integrity", () => {
     );
 
     for (const { id } of commandPayloads) {
-      const content = Object.values(explanations[id]).join(" ");
+      const content = Object.values(explanation(id)).join(" ");
       expect(content).toMatch(/shell|cmd\.exe/i);
       expect(content).toMatch(/argument|argv/i);
     }
@@ -117,8 +118,9 @@ describe("weakness-family control mappings", () => {
         expect(mapping.source.url).toMatch(
           /^https:\/\/(owasp\.org|csrc\.nist\.gov|www\.iso\.org)\//
         );
-        expect(mapping.rationale.length).toBeGreaterThan(40);
-        expect(mapping.limitation).toMatch(/not|does not/i);
+        const content = getMappingContent("en", category, mapping.contentKey);
+        expect(content.rationale.length).toBeGreaterThan(40);
+        expect(content.limitation).toMatch(/not|does not/i);
       }
     }
   });

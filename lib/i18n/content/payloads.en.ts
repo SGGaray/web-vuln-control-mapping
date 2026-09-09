@@ -1,21 +1,8 @@
-/**
- * Payload-specific teaching content. Governance mappings live separately in
- * lib/mappings.ts and resolve by weakness family rather than being repeated in
- * every payload record.
- */
+import type { PayloadContentCatalog } from "./types";
 
-export type PayloadExplanation = {
-  summary: string;
-  why: string;
-  when: string;
-  mitigation: string;
-  preconditions?: string;
-  signal?: string;
-  limitations?: string;
-};
-
-export const explanations: Record<string, PayloadExplanation> = {
+export const payloadContentEn = {
   "xss-script-basic": {
+    description: "The classic reflected test. If it runs, output is not being escaped.",
     summary: "A script tag that shows a harmless alert box if it executes.",
     why: "If an application inserts input into an HTML parsing context without the required output encoding, the browser can interpret that input as active markup.",
     when: "Use as an initial check on a reflected field during an authorized assessment.",
@@ -25,6 +12,7 @@ export const explanations: Record<string, PayloadExplanation> = {
     mitigation: "Apply context-aware output encoding to each untrusted value at its final render point and avoid unsafe DOM sinks.",
   },
   "xss-img-onerror": {
+    description: "Uses an event handler to test active attributes when script tags are stripped.",
     summary: "A broken image with an inline error handler.",
     why: "If active HTML attributes survive rendering, a failed image load can invoke an event handler even when literal script tags are removed.",
     when: "Use to assess HTML attribute handling when a script element is stripped.",
@@ -33,6 +21,7 @@ export const explanations: Record<string, PayloadExplanation> = {
     mitigation: "Encode for the actual attribute context, sanitize permitted markup, and use a Content Security Policy that blocks inline script.",
   },
   "xss-svg-onload": {
+    description: "An SVG load-handler test for values inserted into an active HTML context.",
     summary: "An SVG element with an inline load handler.",
     why: "SVG can be active markup when an application inserts it into an HTML document without suitable encoding or sanitization.",
     when: "Use to assess whether active SVG and event attributes survive a reflected or stored path.",
@@ -41,6 +30,7 @@ export const explanations: Record<string, PayloadExplanation> = {
     mitigation: "Encode untrusted values for their output context, sanitize any allowed markup, and restrict active content with Content Security Policy.",
   },
   "xss-url-encoded": {
+    description: "Percent-encoded markup for tracing transport decoding before a browser sink.",
     summary: "A script test whose markup characters are percent encoded for transport.",
     why: "A transport layer may percent-decode the value before a later component inserts it into a browser sink.",
     when: "Use to compare validation before and after URL decoding in an authorized request path.",
@@ -50,6 +40,7 @@ export const explanations: Record<string, PayloadExplanation> = {
     mitigation: "Normalize input consistently and apply context-aware encoding or sanitization at the final browser sink.",
   },
   "xss-html-entity": {
+    description: "Character references for tracing decoding and any later markup insertion.",
     summary: "A script-shaped value represented with HTML character references.",
     why: "HTML parsing can decode character references, but whether they become active markup depends on how many parsing or decoding steps occur and where the value is inserted.",
     when: "Use to inspect entity handling across storage, templates, and browser rendering.",
@@ -58,6 +49,7 @@ export const explanations: Record<string, PayloadExplanation> = {
     mitigation: "Avoid decode-and-reinsert flows and encode or sanitize for the final output context.",
   },
   "xss-unicode-escape": {
+    description: "Unicode escapes for tracing JSON or JavaScript decoding before an unsafe sink.",
     summary: "A script-shaped value represented with JavaScript Unicode escapes.",
     why: "A JSON or JavaScript parser may turn escape sequences into characters before downstream code uses the resulting string.",
     when: "Use to trace decoding when input travels through JSON or a JavaScript string.",
@@ -66,6 +58,7 @@ export const explanations: Record<string, PayloadExplanation> = {
     mitigation: "Keep data separate from code, serialize JSON with trusted APIs, and encode for the final browser context.",
   },
   "xss-mixed-case": {
+    description: "Mixed case to slip past a case sensitive blocklist of the word script.",
     summary: "The word script written in mixed case.",
     why: "A blocklist matching only the exact lowercase keyword misses variants, while browsers treat tag names case insensitively.",
     when: "Use to test whether a filter's keyword matching is case sensitive.",
@@ -73,6 +66,7 @@ export const explanations: Record<string, PayloadExplanation> = {
     mitigation: "Replace keyword blocklists with context-aware output encoding; a blocklist is not a substitute for encoding and is trivially bypassed by case or obfuscation.",
   },
   "xss-fromcharcode": {
+    description: "Builds the string from char codes to avoid a literal keyword being flagged.",
     summary: "Builds the alert text from character codes, not a literal word.",
     why: "Filters that look for specific literal strings do not see a keyword assembled at runtime.",
     when: "Use to check whether filtering depends on spotting literal keywords.",
@@ -81,6 +75,7 @@ export const explanations: Record<string, PayloadExplanation> = {
     mitigation: "Do not rely on string pattern matching as a defense; enforce output encoding and a CSP with no unsafe-inline or unsafe-eval.",
   },
   "xss-var-split": {
+    description: "Splits the call through a variable to dodge simple pattern matches.",
     summary: "Calls the alert through an intermediate variable.",
     why: "A pattern match for a direct call can miss the same call reached indirectly.",
     when: "Use against filters that only match obvious, direct call patterns.",
@@ -90,6 +85,7 @@ export const explanations: Record<string, PayloadExplanation> = {
   },
 
   "sqli-single-quote": {
+    description: "A lone quote. The simplest probe: a database error hints at injection.",
     summary: "A single quote on its own, the smallest possible probe.",
     why: "A quote can disturb a string literal when an application concatenates input into SQL.",
     when: "Use as an initial comparison on an authorized input path.",
@@ -99,6 +95,7 @@ export const explanations: Record<string, PayloadExplanation> = {
     mitigation: "Use parameterized queries or prepared statements everywhere; never build SQL by concatenating untrusted input.",
   },
   "sqli-or-1-1": {
+    description: "An always true condition, the textbook authentication bypass demo.",
     summary: "An always true condition, the textbook login bypass demo.",
     why: "If input is concatenated into a WHERE clause, an always true condition can make the clause pass regardless of the real values.",
     when: "Use only in an authorized login or lookup comparison with a known-false control value.",
@@ -107,6 +104,7 @@ export const explanations: Record<string, PayloadExplanation> = {
     mitigation: "Parameterize every query, including authentication checks; input should never be able to alter query logic regardless of its content.",
   },
   "sqli-or-comment": {
+    description: "Comments out the rest of the query so only the true condition remains.",
     summary: "An always true condition followed by a comment marker.",
     why: "In a compatible query, the predicate can change logic and the comment marker can suppress trailing syntax.",
     when: "Use only where an authorized test can safely compare the original and control responses.",
@@ -115,6 +113,7 @@ export const explanations: Record<string, PayloadExplanation> = {
     mitigation: "Parameterized queries remove this entire class, since user input is bound as data and cannot introduce new SQL syntax such as a comment marker.",
   },
   "sqli-admin-comment": {
+    description: "Targets a login by ending the username and commenting out the password check.",
     summary: "Ends a username early and comments out what follows.",
     why: "Closing the username value and commenting the remainder can make the query skip a following password condition.",
     when: "Use against login forms to illustrate authentication logic that trusts input.",
@@ -123,6 +122,7 @@ export const explanations: Record<string, PayloadExplanation> = {
     mitigation: "Parameterize the authentication query and enforce least-privilege database accounts, so even a successful bypass has limited reach.",
   },
   "sqli-double-quote": {
+    description: "The double quote variant, for inputs wrapped in double quotes.",
     summary: "The always true test using double quotes.",
     why: "It can affect parsing only when the target dialect and surrounding query treat double quotes as compatible string delimiters.",
     when: "Use to teach how quoting rules vary rather than to infer the backend from one response.",
@@ -131,6 +131,7 @@ export const explanations: Record<string, PayloadExplanation> = {
     mitigation: "Parameterized queries close this regardless of quoting style; the choice of quote character is irrelevant once input is bound as data, not syntax.",
   },
   "sqli-union-null": {
+    description: "Introduces UNION to learn the column count, the first step in extraction.",
     summary: "A UNION that selects a single placeholder column.",
     why: "UNION appends a second query's result, and matching the column count is the first structural step to understand a query.",
     when: "Use conceptually to learn how many columns a query returns during an authorized assessment.",
@@ -139,6 +140,7 @@ export const explanations: Record<string, PayloadExplanation> = {
     mitigation: "Parameterized queries prevent UNION-based extraction entirely; least-privilege database accounts also limit what a successful UNION could read.",
   },
   "sqli-time-sleep": {
+    description: "A MySQL delay probe whose repeated, controlled timing difference may signal blind injection.",
     summary: "A MySQL-oriented conditional expression that requests a short delay.",
     why: "If compatible SQL is executed, the database sleep function may affect end-to-end response time.",
     when: "Use only for an authorized blind assessment with a stable baseline and low-impact delay.",
@@ -149,6 +151,7 @@ export const explanations: Record<string, PayloadExplanation> = {
   },
 
   "cmd-semicolon-id": {
+    description: "Chains a harmless command after a semicolon. id just prints the user.",
     summary: "Chains a harmless id command after a semicolon.",
     why: "If input is passed to a POSIX shell, a separator lets a second command run after the intended one. id only prints the user.",
     when: "Use to check whether a parameter is handed to a shell. The command is read only.",
@@ -157,6 +160,7 @@ export const explanations: Record<string, PayloadExplanation> = {
     mitigation: "Avoid invoking a shell with user input at all; call the underlying binary directly with an argument array (no shell interpolation), and allowlist expected values.",
   },
   "cmd-and-whoami": {
+    description: "Tests whether a POSIX shell honors a conditional separator before whoami.",
     summary: "Runs whoami only if the first command succeeds.",
     why: "A compatible shell may run the second command when it parses the separator and the preceding command succeeds.",
     when: "Use as a controlled comparison during an authorized shell-injection assessment.",
@@ -166,6 +170,7 @@ export const explanations: Record<string, PayloadExplanation> = {
     mitigation: "Use non-shell process execution APIs (argument arrays) so separators like && are inert, plus strict input allowlisting.",
   },
   "cmd-pipe-whoami": {
+    description: "Pipes into a second command. Tests whether pipe characters pass through.",
     summary: "Pipes output into a second, harmless command.",
     why: "A compatible shell may create a pipeline when it interprets the pipe metacharacter.",
     when: "Use to test whether pipe characters pass through input handling.",
@@ -174,6 +179,7 @@ export const explanations: Record<string, PayloadExplanation> = {
     mitigation: "Use non-shell process APIs with explicit arguments and validate each argument for the called program.",
   },
   "cmd-subshell": {
+    description: "Tests POSIX command substitution when input may reach a shell parser.",
     summary: "Runs id inside a command substitution.",
     why: "A compatible shell can execute the inner command and substitute its output into the surrounding command string.",
     when: "Use where input may be embedded in a larger command string, such as a request body.",
@@ -183,6 +189,7 @@ export const explanations: Record<string, PayloadExplanation> = {
     mitigation: "Use non-shell execution APIs so substitution syntax has no special meaning, and validate request body fields against a strict allowlist before use.",
   },
   "cmd-backtick": {
+    description: "Backtick substitution, the older form of the same idea.",
     summary: "The older backtick form of command substitution.",
     why: "Many POSIX-compatible shells interpret backticks as an older command-substitution form.",
     when: "Use alongside the parenthesis form to cover legacy shell syntax.",
@@ -191,6 +198,7 @@ export const explanations: Record<string, PayloadExplanation> = {
     mitigation: "Do not filter by syntax variant; remove shell invocation entirely so no substitution form, old or new, has any effect.",
   },
   "cmd-sleep": {
+    description: "A benign delay for blind detection when there is no visible output.",
     summary: "A POSIX separator followed by a short delay command for blind comparison.",
     why: "If a compatible shell executes the appended command, the delay may affect end-to-end response time.",
     when: "Use only with authorization, a stable baseline, and a short delay that will not disrupt the service.",
@@ -200,6 +208,7 @@ export const explanations: Record<string, PayloadExplanation> = {
     mitigation: "Avoid shell invocation, pass explicit arguments, set subprocess timeouts, and restrict process privileges and resources.",
   },
   "cmd-win-amp": {
+    description: "The Windows chaining separator, for cmd.exe style targets.",
     summary: "The Windows separator running a harmless whoami.",
     why: "Windows cmd.exe may treat an ampersand as a separator when untrusted input is embedded in its command string.",
     when: "Use against Windows or cmd.exe style targets where Unix separators may not apply.",
@@ -207,4 +216,4 @@ export const explanations: Record<string, PayloadExplanation> = {
     limitations: "Platform identification and argument injection require separate evidence; the string alone establishes neither.",
     mitigation: "Use non-shell process execution APIs on every platform; cmd.exe separators are only a risk if a shell is invoked with untrusted input at all.",
   },
-};
+} satisfies PayloadContentCatalog;

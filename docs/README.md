@@ -1,9 +1,7 @@
 # Screenshots
 
-Add the images referenced by the main README here:
+Public media referenced by the project README lives here:
 
-- `hero.png` .. the Payload Reference with filters visible
-- `filtering.gif` .. a short clip of the counts updating as filters toggle
-- `explain.png` .. one Explain panel expanded
+- `hero.png` — the Payload Reference with filters visible
 
 Keep them reasonably small (under ~1 MB each) so the repo stays light.
