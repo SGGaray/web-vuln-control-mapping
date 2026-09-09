@@ -6,10 +6,12 @@ import { ToolShell, Notice } from "@/components/ui/ToolShell";
 import { Field, TextArea } from "@/components/ui/Field";
 import CopyButton from "@/components/ui/CopyButton";
 import { decodeUrlComponent, encodeUrlComponent } from "@/lib/url-component";
+import { useLocale } from "@/lib/i18n/context";
 
 type Mode = "encode" | "decode";
 
 export default function UrlTool() {
+  const { t } = useLocale();
   const [mode, setMode] = useState<Mode>("encode");
   const [input, setInput] = useState("");
 
@@ -22,30 +24,28 @@ export default function UrlTool() {
           ? encodeUrlComponent(input)
           : decodeUrlComponent(input);
     } catch {
-      error = "Malformed percent encoding. Look for a lone % or bad sequence.";
+      error = t("url.errors.malformed");
     }
   }
 
   return (
-    <ToolShell
-      title="URL Encode"
-      blurb="Percent encode a string for safe use in URLs, or decode it back."
-    >
+    <ToolShell title={t("url.title")} blurb={t("url.description")}>
       <div className="flex gap-1">
         {(["encode", "decode"] as Mode[]).map((m) => (
           <button
             key={m}
             onClick={() => setMode(m)}
+            aria-pressed={mode === m}
             className={`btn ${
               mode === m ? "border-muted text-bright bg-raised" : "opacity-60"
             }`}
           >
-            {m}
+            {t(m === "encode" ? "common.encode" : "common.decode")}
           </button>
         ))}
       </div>
 
-      <Field label={mode === "encode" ? "Raw string" : "Encoded string"}>
+      <Field label={mode === "encode" ? t("url.raw") : t("url.encoded")}>
         <TextArea
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -59,13 +59,13 @@ export default function UrlTool() {
 
       <div className="flex items-center gap-2 text-muted">
         <ArrowRightLeft size={14} />
-        <span className="eyebrow">Output</span>
+        <span className="eyebrow">{t("common.output")}</span>
       </div>
 
       {error ? (
         <Notice>{error}</Notice>
       ) : (
-        <Field label="Result" action={<CopyButton value={output} />}>
+        <Field label={t("common.result")} action={<CopyButton value={output} />}>
           <div className="terminal min-h-[80px]">{output || "\u00a0"}</div>
         </Field>
       )}

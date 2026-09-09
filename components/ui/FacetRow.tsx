@@ -17,6 +17,7 @@ export type FacetRowProps = {
   counts: Map<string, number>; // value -> matching count, from the facet utility
   onToggle: (value: string) => void; // called when a chip is clicked
   icon?: ReactNode; // optional glyph shown beside the label
+  valueLabel?: (value: string) => ReactNode;
 };
 
 export default function FacetRow({
@@ -26,6 +27,7 @@ export default function FacetRow({
   counts,
   onToggle,
   icon,
+  valueLabel = (value) => value,
 }: FacetRowProps) {
   return (
     <div className="flex flex-col gap-2">
@@ -50,7 +52,7 @@ export default function FacetRow({
                   : "border-line text-muted hover:border-muted hover:text-fg"
               } ${count === 0 && !active ? "opacity-40" : ""}`}
             >
-              {value}
+              {valueLabel(value)}
               {/* Subtle count that never competes with the label. */}
               <span className="tabular-nums opacity-60">{count}</span>
             </button>

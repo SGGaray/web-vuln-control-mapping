@@ -1,4 +1,5 @@
 import type { ComponentType } from "react";
+import type { TranslationKey } from "@/lib/i18n";
 import {
   Binary,
   Link2,
@@ -20,12 +21,20 @@ import PayloadGenerator from "@/components/tools/PayloadGenerator";
 
 export interface Tool {
   id: string;
-  name: string;
-  blurb: string;
-  category: string;
+  nameKey: TranslationKey;
+  category: ToolCategory;
   icon: LucideIcon;
   component: ComponentType;
 }
+
+export type ToolCategory = "Recon" | "Encoding" | "Crypto" | "Data";
+
+export const categoryTranslationKeys: Record<ToolCategory, TranslationKey> = {
+  Recon: "navigation.categories.recon",
+  Encoding: "navigation.categories.encoding",
+  Crypto: "navigation.categories.crypto",
+  Data: "navigation.categories.data",
+};
 
 /**
  * A tool definition. This registry is the ONLY place the app needs to know
@@ -36,56 +45,49 @@ export interface Tool {
 export const tools: Tool[] = [
   {
     id: "payloads",
-    name: "Payload Reference",
-    blurb: "Reference payloads mapped to defensive guidance.",
+    nameKey: "navigation.payloads",
     category: "Recon",
     icon: Bug,
     component: PayloadGenerator,
   },
   {
     id: "base64",
-    name: "Base64",
-    blurb: "Encode and decode Base64.",
+    nameKey: "navigation.base64",
     category: "Encoding",
     icon: Binary,
     component: Base64Tool,
   },
   {
     id: "url",
-    name: "URL Encode",
-    blurb: "Percent encode and decode.",
+    nameKey: "navigation.url",
     category: "Encoding",
     icon: Link2,
     component: UrlTool,
   },
   {
     id: "hash",
-    name: "Hash",
-    blurb: "MD5, SHA1, SHA256 digests.",
+    nameKey: "navigation.hash",
     category: "Crypto",
     icon: Hash,
     component: HashTool,
   },
   {
     id: "json",
-    name: "JSON",
-    blurb: "Format and validate JSON.",
+    nameKey: "navigation.json",
     category: "Data",
     icon: Braces,
     component: JsonTool,
   },
   {
     id: "headers",
-    name: "Headers",
-    blurb: "Analyze HTTP response headers.",
+    nameKey: "navigation.headers",
     category: "Recon",
     icon: ListTree,
     component: HeaderAnalyzer,
   },
   {
     id: "commands",
-    name: "Commands",
-    blurb: "Generate nmap and curl commands.",
+    nameKey: "navigation.commands",
     category: "Recon",
     icon: Terminal,
     component: CommandGenerator,
@@ -98,6 +100,6 @@ export function getTool(id: string | null): Tool {
 }
 
 /** Unique category names in the order they first appear. */
-export function categories(): string[] {
+export function categories(): ToolCategory[] {
   return [...new Set(tools.map((t) => t.category))];
 }

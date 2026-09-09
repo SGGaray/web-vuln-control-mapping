@@ -11,6 +11,7 @@ import {
   serializePosixArgv,
   type CurlMethod,
 } from "@/lib/commands";
+import { useLocale } from "@/lib/i18n/context";
 
 type Kind = "nmap" | "curl";
 
@@ -19,6 +20,7 @@ type Kind = "nmap" | "curl";
 /* -------------------------------------------------------------------------- */
 
 function NmapBuilder() {
+  const { t } = useLocale();
   const [target, setTarget] = useState("");
   const [scan, setScan] = useState("-sS"); // SYN scan is the common default
   const [ports, setPorts] = useState("top"); // top | all | custom
@@ -41,7 +43,7 @@ function NmapBuilder() {
 
   return (
     <div className="flex flex-col gap-4">
-      <Field label="Target (host, IP, or range)">
+      <Field label={t("commands.target")}>
         <TextInput
           value={target}
           onChange={(e) => setTarget(e.target.value)}
@@ -50,16 +52,16 @@ function NmapBuilder() {
       </Field>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Scan type">
+        <Field label={t("commands.scanType")}>
           <select className="io" value={scan} onChange={(e) => setScan(e.target.value)}>
-            <option value="-sS">SYN scan (-sS)</option>
-            <option value="-sT">TCP connect (-sT)</option>
-            <option value="-sU">UDP scan (-sU)</option>
-            <option value="-sn">Ping sweep (-sn)</option>
+            <option value="-sS">{t("commands.scan.syn")}</option>
+            <option value="-sT">{t("commands.scan.tcp")}</option>
+            <option value="-sU">{t("commands.scan.udp")}</option>
+            <option value="-sn">{t("commands.scan.ping")}</option>
           </select>
         </Field>
 
-        <Field label="Timing">
+        <Field label={t("commands.timing")}>
           <select className="io" value={timing} onChange={(e) => setTiming(e.target.value)}>
             {["T2", "T3", "T4", "T5"].map((t) => (
               <option key={t} value={t}>
@@ -70,16 +72,17 @@ function NmapBuilder() {
         </Field>
       </div>
 
-      <Field label="Ports">
+      <Field label={t("commands.ports")}>
         <div className="flex flex-wrap gap-2">
           {[
-            ["top", "Top 1000"],
-            ["all", "All (-p-)"],
-            ["custom", "Custom"],
+            ["top", t("commands.ports.top")],
+            ["all", t("commands.ports.all")],
+            ["custom", t("commands.ports.custom")],
           ].map(([val, label]) => (
             <button
               key={val}
               onClick={() => setPorts(val)}
+              aria-pressed={ports === val}
               className={`btn ${ports === val ? "border-muted text-bright" : "opacity-60"}`}
             >
               {label}
@@ -89,7 +92,7 @@ function NmapBuilder() {
       </Field>
 
       {ports === "custom" && (
-        <Field label="Custom ports">
+        <Field label={t("commands.customPorts")}>
           <TextInput
             value={customPorts}
             onChange={(e) => setCustomPorts(e.target.value)}
@@ -99,8 +102,8 @@ function NmapBuilder() {
       )}
 
       <div className="flex flex-wrap gap-4">
-        <Toggle label="-sV version detect" checked={sv} onChange={setSv} />
-        <Toggle label="-Pn skip discovery" checked={pn} onChange={setPn} />
+        <Toggle label={t("commands.versionDetect")} checked={sv} onChange={setSv} />
+        <Toggle label={t("commands.skipDiscovery")} checked={pn} onChange={setPn} />
       </div>
 
       <Output command={command} />
@@ -113,6 +116,7 @@ function NmapBuilder() {
 /* -------------------------------------------------------------------------- */
 
 function CurlBuilder() {
+  const { t } = useLocale();
   const [url, setUrl] = useState("");
   const [method, setMethod] = useState("GET");
   const [header, setHeader] = useState("");
@@ -136,7 +140,7 @@ function CurlBuilder() {
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-[140px_1fr]">
-        <Field label="Method">
+        <Field label={t("commands.method")}>
           <select className="io" value={method} onChange={(e) => setMethod(e.target.value)}>
             {["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"].map((m) => (
               <option key={m} value={m}>
@@ -154,7 +158,7 @@ function CurlBuilder() {
         </Field>
       </div>
 
-      <Field label="Header (optional)">
+      <Field label={t("commands.header", { optional: t("common.optional") })}>
         <TextInput
           value={header}
           onChange={(e) => setHeader(e.target.value)}
@@ -162,7 +166,7 @@ function CurlBuilder() {
         />
       </Field>
 
-      <Field label="Body (optional)">
+      <Field label={t("commands.body", { optional: t("common.optional") })}>
         <TextInput
           value={body}
           onChange={(e) => setBody(e.target.value)}
@@ -171,9 +175,9 @@ function CurlBuilder() {
       </Field>
 
       <div className="flex flex-wrap gap-4">
-        <Toggle label="-L follow redirects" checked={follow} onChange={setFollow} />
-        <Toggle label="-k insecure TLS" checked={insecure} onChange={setInsecure} />
-        <Toggle label="-v verbose" checked={verbose} onChange={setVerbose} />
+        <Toggle label={t("commands.followRedirects")} checked={follow} onChange={setFollow} />
+        <Toggle label={t("commands.insecureTls")} checked={insecure} onChange={setInsecure} />
+        <Toggle label={t("commands.verbose")} checked={verbose} onChange={setVerbose} />
       </div>
 
       <Output command={command} />
@@ -210,8 +214,9 @@ function Toggle({
 
 // The generated command block with a copy button.
 function Output({ command }: { command: string }) {
+  const { t } = useLocale();
   return (
-    <Field label="Generated command" action={<CopyButton value={command} />}>
+    <Field label={t("commands.generated")} action={<CopyButton value={command} />}>
       <div className="terminal">
         <span className="select-none text-muted">$ </span>
         {command}
@@ -221,13 +226,11 @@ function Output({ command }: { command: string }) {
 }
 
 export default function CommandGenerator() {
+  const { t } = useLocale();
   const [kind, setKind] = useState<Kind>("nmap");
 
   return (
-    <ToolShell
-      title="Command Generator"
-      blurb="Build nmap and curl commands from a form. Copy and run in your own lab."
-    >
+    <ToolShell title={t("commands.title")} blurb={t("commands.description")}>
       <div className="flex items-center gap-2">
         <Terminal size={14} className="text-muted" />
         <div className="flex gap-1">
@@ -235,6 +238,7 @@ export default function CommandGenerator() {
             <button
               key={k}
               onClick={() => setKind(k)}
+              aria-pressed={kind === k}
               className={`btn ${kind === k ? "border-muted text-bright bg-raised" : "opacity-60"}`}
             >
               {k}

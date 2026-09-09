@@ -33,6 +33,19 @@ Tool navigation uses URL hashes. An empty or unknown hash opens Payload
 Reference; a recognized hash opens that tool, and browser Back/Forward follows
 the corresponding history entry.
 
+## Interface languages
+
+The interface defaults deterministically to Argentine Spanish (`es-AR`). The
+ES/EN control changes presentation text without changing tool IDs, assessment
+states, mapping relationships, generated commands, or other technical values.
+A valid preference is stored locally under `wvcm-locale`; missing or invalid
+values fall back to `es-AR`. The first server render stays deterministic and a
+saved preference is restored after hydration without locale-specific routing.
+
+The 23 payload records and their detailed teaching explanations remain in their
+original English in this first localization phase. Technical names such as
+Base64, JSON, HTTP, OWASP, NIST, and ISO/IEC also remain unchanged.
+
 ## Utility data flow
 
 - Base64, URL encoding, JSON formatting, and Header Analyzer run entirely in the

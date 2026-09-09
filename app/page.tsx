@@ -12,8 +12,10 @@ import { getTool, tools } from "@/lib/tools";
 import { getDrawerKeyAction, restoreDrawerFocus } from "@/lib/drawer-keyboard";
 import { navigateToTool, subscribeToToolHash } from "@/lib/navigation";
 import MobileDrawer from "@/components/MobileDrawer";
+import { useLocale } from "@/lib/i18n/context";
 
 export default function Home() {
+  const { t } = useLocale();
   // The active tool id drives the whole view. We keep it in the URL hash so
   // a tool is bookmarkable and the back button works, all without a reload.
   const [activeId, setActiveId] = useState(tools[0].id);
@@ -87,13 +89,13 @@ export default function Home() {
             ref={menuButtonRef}
             onClick={() => setDrawerOpen((v) => !v)}
             className="btn"
-            aria-label={drawerOpen ? "Close navigation" : "Open navigation"}
+            aria-label={drawerOpen ? t("navigation.close") : t("navigation.open")}
             aria-expanded={drawerOpen}
             aria-controls="mobile-tool-navigation"
           >
             {drawerOpen ? <X size={15} /> : <Menu size={15} />}
           </button>
-          <span className="font-mono text-sm text-bright">payload / reference</span>
+          <span className="font-mono text-sm text-bright">{t("app.title")}</span>
         </header>
 
         <main

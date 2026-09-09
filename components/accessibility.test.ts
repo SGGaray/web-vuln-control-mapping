@@ -73,12 +73,12 @@ describe("form and navigation accessibility", () => {
   });
 
   it("keeps Payload Reference search explicitly named", () => {
-    expect(toolMarkup).toContain('aria-label="Search payloads"');
+    expect(toolMarkup).toContain('aria-label="Buscar payloads"');
   });
 
   it("gives the menu button a name, controlled drawer, and expanded state", () => {
     const markup = renderToStaticMarkup(createElement(Home));
-    expect(markup).toContain('aria-label="Open navigation"');
+    expect(markup).toContain('aria-label="Abrir navegación"');
     expect(markup).toContain('aria-expanded="false"');
     expect(markup).toContain('aria-controls="mobile-tool-navigation"');
   });
@@ -95,8 +95,8 @@ describe("form and navigation accessibility", () => {
     );
     expect(markup).toContain('role="dialog"');
     expect(markup).toContain('aria-modal="true"');
-    expect(markup).toContain('aria-label="Tool navigation"');
-    expect(markup).toContain('<nav aria-label="Tools"');
+    expect(markup).toContain('aria-label="Navegación de herramientas"');
+    expect(markup).toContain('<nav aria-label="Herramientas"');
   });
 
   it("maps Escape to drawer closure", () => {

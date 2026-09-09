@@ -14,6 +14,7 @@ import {
   startResult,
   type ResultState,
 } from "@/lib/result-state";
+import { useLocale } from "@/lib/i18n/context";
 
 // Node's crypto (used by the API route) supports MD5, which the browser's
 // Web Crypto does not. That is the main reason hashing lives on the server.
@@ -21,6 +22,7 @@ const ALGORITHMS = ["md5", "sha1", "sha256"] as const;
 type Algo = (typeof ALGORITHMS)[number];
 
 export default function HashTool() {
+  const { t } = useLocale();
   const [state, setState] = useState<ResultState<Record<Algo, string>>>(initialResultState);
   const activeController = useRef<AbortController | null>(null);
   const input = state.input;
@@ -40,10 +42,13 @@ export default function HashTool() {
         setState((current) => resolveResult(current, requestVersion, hashes));
       } catch (err) {
         if (!(err instanceof HashRequestError && err.kind === "aborted")) {
+          const message = err instanceof HashRequestError
+            ? `${err.kind}:${err.status ?? ""}`
+            : "network:";
           setState((current) => rejectResult(
             current,
             requestVersion,
-            (err as Error).message || "Could not reach the hashing service."
+            message
           ));
         }
       }
@@ -64,11 +69,8 @@ export default function HashTool() {
   }
 
   return (
-    <ToolShell
-      title="Hash Generator"
-      blurb="Compute MD5, SHA1, and SHA256 digests. Hashing runs on the API route."
-    >
-      <Field label="Input">
+    <ToolShell title={t("hash.title")} blurb={t("hash.description")}>
+      <Field label={t("common.input")}>
         <TextArea
           value={input}
           onChange={(e) => updateInput(e.target.value)}
@@ -76,7 +78,19 @@ export default function HashTool() {
         />
       </Field>
 
-      {state.status === "error" && <Notice>{state.message}</Notice>}
+      {state.status === "error" && (
+        <Notice>
+          {state.message.startsWith("network:")
+            ? t("hash.errors.network")
+            : state.message.startsWith("api:")
+              ? t("hash.errors.api", {
+                  status: state.message.split(":")[1]
+                    ? ` (HTTP ${state.message.split(":")[1]})`
+                    : "",
+                })
+              : t("hash.errors.invalidResponse")}
+        </Notice>
+      )}
 
       <div className="flex flex-col gap-3">
         {ALGORITHMS.map((algo) => {
@@ -88,7 +102,7 @@ export default function HashTool() {
               action={value ? <CopyButton value={value} /> : null}
             >
               <div className="terminal min-h-[44px]">
-                {state.status === "loading" ? "computing..." : value || "\u00a0"}
+                {state.status === "loading" ? t("common.computing") : value || "\u00a0"}
               </div>
             </Field>
           );

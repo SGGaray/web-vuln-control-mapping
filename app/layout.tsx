@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { LocaleProvider } from "@/lib/i18n/context";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Web Vulnerability Control Mapping",
+  title: "Mapeo de controles para vulnerabilidades web",
   description:
-    "Educational reference mapping common web vulnerabilities to risk, governance controls, and frameworks (OWASP, NIST, ISO 27001).",
+    "Referencia educativa que relaciona vulnerabilidades web comunes con riesgos, controles de gobernanza y marcos como OWASP, NIST e ISO 27001.",
 };
  
 export default function RootLayout({
@@ -13,8 +14,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className="min-h-screen antialiased">{children}</body>
+    <html lang="es-AR">
+      <body className="min-h-screen antialiased">
+        <LocaleProvider>{children}</LocaleProvider>
+      </body>
     </html>
   );
 }

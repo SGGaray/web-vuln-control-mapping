@@ -13,9 +13,11 @@ import {
   resolveResult,
   type ResultState,
 } from "@/lib/result-state";
-import { transformJsonText, type JsonTextMode } from "@/lib/json-text";
+import { JsonTextError, transformJsonText, type JsonTextMode } from "@/lib/json-text";
+import { useLocale } from "@/lib/i18n/context";
 
 export default function JsonTool() {
+  const { t } = useLocale();
   const [state, setState] = useState<ResultState<string>>(initialResultState);
   const input = state.input;
   const output = copyableResult(state) ?? "";
@@ -25,7 +27,10 @@ export default function JsonTool() {
       const output = transformJsonText(input, mode);
       setState((current) => resolveResult(current, current.version, output));
     } catch (err) {
-      setState((current) => rejectResult(current, current.version, (err as Error).message));
+      const position = err instanceof JsonTextError ? err.position : 0;
+      setState((current) =>
+        rejectResult(current, current.version, String(position))
+      );
     }
   }
 
@@ -34,11 +39,8 @@ export default function JsonTool() {
   }
 
   return (
-    <ToolShell
-      title="JSON Formatter"
-      blurb="Format or minify valid JSON while preserving number, string, and duplicate-key lexemes."
-    >
-      <Field label="Input">
+    <ToolShell title={t("json.title")} blurb={t("json.description")}>
+      <Field label={t("common.input")}>
         <TextArea
           value={input}
           onChange={(e) => updateInput(e.target.value)}
@@ -49,19 +51,21 @@ export default function JsonTool() {
       <div className="flex flex-wrap gap-2">
         <button className="btn" onClick={() => run("format")}>
           <CheckCircle2 size={13} />
-          Format
+          {t("common.format")}
         </button>
         <button className="btn" onClick={() => run("minify")}>
           <Minimize2 size={13} />
-          Minify
+          {t("common.minify")}
         </button>
       </div>
 
-      {state.status === "error" && <Notice>{state.message}</Notice>}
+      {state.status === "error" && (
+        <Notice>{t("json.errors.invalid", { position: state.message })}</Notice>
+      )}
 
       {state.status === "success" && (
         <Field
-          label="Output"
+          label={t("common.output")}
           action={<CopyButton value={output} />}
         >
           <div className="terminal min-h-[120px] whitespace-pre">{output}</div>

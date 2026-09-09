@@ -30,6 +30,9 @@ import {
   type PayloadCategoryFilter,
 } from "@/lib/payload-filter";
 import FacetRow from "@/components/ui/FacetRow";
+import { useLocale } from "@/lib/i18n/context";
+import { payloadContextKey, relationshipKey } from "@/lib/i18n/presentation";
+import type { PayloadContext } from "@/lib/payloads";
 
 // Returns a toggler that adds or removes a value in a Set backed filter,
 // producing a fresh Set so React sees a new reference. Shared by every facet.
@@ -60,6 +63,7 @@ function relationshipStyle(relationship: MappingRelationship): string {
 }
 
 function ExplainDetails({ payload }: { payload: Payload }) {
+  const { t } = useLocale();
   const explanation = explanations[payload.id];
   const bundle = getMappingBundle(payload.category);
 
@@ -67,39 +71,37 @@ function ExplainDetails({ payload }: { payload: Payload }) {
     <div className="flex flex-col gap-3 rounded border border-line bg-base/40 p-3">
       {(
         [
-          ["Summary", explanation.summary],
-          ["Why it works", explanation.why],
-          ["When to use", explanation.when],
-          ["Preconditions", explanation.preconditions],
-          ["Observable signal", explanation.signal],
-          ["Limitations", explanation.limitations],
+          ["payloads.details.summary", explanation.summary],
+          ["payloads.details.why", explanation.why],
+          ["payloads.details.when", explanation.when],
+          ["payloads.details.preconditions", explanation.preconditions],
+          ["payloads.details.signal", explanation.signal],
+          ["payloads.details.limitations", explanation.limitations],
         ] as const
-      ).map(([label, value]) =>
+      ).map(([labelKey, value]) =>
         value ? (
-          <div key={label} className="flex flex-col gap-1">
-            <span className="eyebrow">{label}</span>
+          <div key={labelKey} className="flex flex-col gap-1">
+            <span className="eyebrow">{t(labelKey)}</span>
             <p className="text-sm text-fg">{value}</p>
           </div>
         ) : null
       )}
 
       <div className="flex flex-col gap-1 border-t border-line pt-3">
-        <span className="eyebrow text-bright">Mitigation technique</span>
+        <span className="eyebrow text-bright">{t("payloads.details.mitigation")}</span>
         <p className="text-sm text-fg">{explanation.mitigation}</p>
       </div>
 
       <div className="flex flex-col gap-3 border-t border-line pt-3">
         <div className="flex flex-col gap-1">
-          <span className="eyebrow text-bright">Control mappings</span>
+          <span className="eyebrow text-bright">{t("payloads.mappings.title")}</span>
           <p className="text-xs leading-relaxed text-muted">
-            These relationships classify or support the weakness family. They
-            are not evidence that a control is implemented, effective, or that
-            a system is compliant.
+            {t("payloads.mappings.disclaimer")}
           </p>
           <div className="flex flex-wrap gap-2 font-mono text-[10px] text-muted">
-            <span>Implementation evidence: {bundle.implementationEvidence}</span>
+            <span>{t("common.implementationEvidence")}: {t("common.notEvaluated")}</span>
             <span aria-hidden="true">·</span>
-            <span>Effectiveness evidence: {bundle.effectivenessEvidence}</span>
+            <span>{t("common.effectivenessEvidence")}: {t("common.notEvaluated")}</span>
           </div>
         </div>
 
@@ -117,7 +119,7 @@ function ExplainDetails({ payload }: { payload: Payload }) {
                   mapping.relationship
                 )}`}
               >
-                {mapping.relationship}
+                {t(relationshipKey(mapping.relationship))}
               </span>
             </div>
             <p className="text-xs font-medium text-fg">{mapping.title}</p>
@@ -125,7 +127,7 @@ function ExplainDetails({ payload }: { payload: Payload }) {
               {mapping.rationale}
             </p>
             <p className="text-xs leading-relaxed text-muted">
-              Limitation: {mapping.limitation}
+              {t("common.limitation")}: {mapping.limitation}
             </p>
             <a
               href={mapping.source.url}
@@ -133,7 +135,7 @@ function ExplainDetails({ payload }: { payload: Payload }) {
               rel="noreferrer"
               className="w-fit font-mono text-[10px] text-muted underline decoration-line underline-offset-4 hover:text-bright"
             >
-              Source: {mapping.source.label} · {mapping.source.provenance}
+              {t("common.source")}: {mapping.source.label} · {t("mappings.provenance.official")}
             </a>
           </section>
         ))}
@@ -185,6 +187,7 @@ function Highlight({ text, query }: { text: string; query: string }) {
 }
 
 export default function PayloadGenerator() {
+  const { t } = useLocale();
   const [category, setCategory] = useState<PayloadCategoryFilter>("All");
   // A set of active tag filters. Empty means "no tag filter".
   const [tags, setTags] = useState<Set<string>>(new Set());
@@ -259,17 +262,12 @@ export default function PayloadGenerator() {
   );
 
   return (
-    <ToolShell
-      title="Payload Reference"
-      blurb="A reference set of basic payloads with explanations. Search or filter by category, context, and tag."
-    >
+    <ToolShell title={t("payloads.title")} blurb={t("payloads.description")}>
       {/* Scope reminder. This module is a study aid, nothing here runs. */}
       <div className="flex items-start gap-2 rounded border border-line bg-raised px-3 py-2.5 text-sm">
         <ShieldAlert size={15} className="mt-0.5 shrink-0 text-muted" />
         <p className="font-mono text-xs leading-relaxed text-muted">
-          Educational reference for authorized testing only. These are static
-          strings, not automation. Use them only on systems you own or have
-          written permission to test.
+          {t("payloads.scope")}
         </p>
       </div>
 
@@ -283,14 +281,14 @@ export default function PayloadGenerator() {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search payloads, descriptions, tags.."
-          aria-label="Search payloads"
+          placeholder={t("payloads.searchPlaceholder")}
+          aria-label={t("payloads.searchLabel")}
           className="io pl-9 pr-9"
         />
         {query && (
           <button
             onClick={() => setQuery("")}
-            aria-label="Clear search"
+            aria-label={t("payloads.clearSearch")}
             className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-bright"
           >
             <X size={15} />
@@ -308,23 +306,24 @@ export default function PayloadGenerator() {
               category === c ? "border-muted text-bright bg-raised" : "opacity-60"
             }`}
           >
-            {c}
+            {c === "All" ? t("payloads.all") : c}
           </button>
         ))}
       </div>
 
       {/* Both facets render through the same generic component. */}
       <FacetRow
-        label="Context"
+        label={t("payloads.context")}
         icon={<Crosshair size={11} />}
         values={payloadContexts}
         selected={contexts}
         counts={contextCounts}
         onToggle={toggleContext}
+        valueLabel={(value) => t(payloadContextKey(value as PayloadContext))}
       />
 
       <FacetRow
-        label="Tags"
+        label={t("payloads.tags")}
         values={tagList}
         selected={tags}
         counts={tagCounts}
@@ -334,11 +333,13 @@ export default function PayloadGenerator() {
       {/* Result count and reset */}
       <div className="flex items-center justify-between">
         <span className="eyebrow">
-          {filtered.length} payload{filtered.length === 1 ? "" : "s"}
+          {t(filtered.length === 1 ? "payloads.count.one" : "payloads.count.other", {
+            count: filtered.length,
+          })}
         </span>
         {filtersActive && (
           <button onClick={reset} className="btn">
-            Reset filters
+            {t("payloads.reset")}
           </button>
         )}
       </div>
@@ -358,10 +359,12 @@ export default function PayloadGenerator() {
                 <button
                   onClick={() => toggleContext(p.context)}
                   className="inline-flex items-center gap-1 rounded border border-line bg-raised px-1.5 py-0.5 font-mono text-[10px] text-fg hover:border-muted hover:text-bright"
-                  title={`Filter by ${p.context}`}
+                  title={t("payloads.filterBy", {
+                    value: t(payloadContextKey(p.context)),
+                  })}
                 >
                   <Crosshair size={10} className="text-muted" />
-                  {p.context}
+                  {t(payloadContextKey(p.context))}
                 </button>
               </div>
               <CopyButton value={p.value} />
@@ -391,7 +394,7 @@ export default function PayloadGenerator() {
                       openIds.has(p.id) ? "rotate-180" : ""
                     }`}
                   />
-                  Explain
+                  {t("payloads.explain")}
                 </button>
 
                 {openIds.has(p.id) && <ExplainDetails payload={p} />}
@@ -417,12 +420,12 @@ export default function PayloadGenerator() {
           <div className="flex flex-col items-center gap-3 rounded border border-line bg-surface px-3 py-8 text-center">
             <p className="font-mono text-sm text-muted">
               {q
-                ? `No payloads match "${query.trim()}".`
-                : "No payloads match those filters."}
+                ? t("payloads.noSearchResults", { query: query.trim() })
+                : t("payloads.noFilterResults")}
             </p>
             {filtersActive && (
               <button onClick={reset} className="btn">
-                Reset filters
+                {t("payloads.reset")}
               </button>
             )}
           </div>

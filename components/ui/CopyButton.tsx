@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
+import { useLocale } from "@/lib/i18n/context";
 
 /**
  * Copy-to-clipboard button used by every tool.
@@ -9,12 +10,15 @@ import { Check, Copy } from "lucide-react";
  */
 export default function CopyButton({
   value,
-  label = "Copy",
+  label,
 }: {
   value: string;
   label?: string;
 }) {
+  const { t } = useLocale();
   const [copied, setCopied] = useState(false);
+  const copyLabel = label ?? t("common.copy");
+  const copiedLabel = t("common.copied");
 
   async function handleCopy() {
     // Nothing to copy? Bail quietly so we never show a false confirmation.
@@ -35,10 +39,10 @@ export default function CopyButton({
       onClick={handleCopy}
       disabled={!value}
       className="btn"
-      aria-label={copied ? "Copied" : label}
+      aria-label={copied ? copiedLabel : copyLabel}
     >
       {copied ? <Check size={13} /> : <Copy size={13} />}
-      {copied ? "Copied" : label}
+      {copied ? copiedLabel : copyLabel}
     </button>
   );
 }
