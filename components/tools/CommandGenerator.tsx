@@ -5,6 +5,12 @@ import { Terminal } from "lucide-react";
 import { ToolShell } from "@/components/ui/ToolShell";
 import { Field, TextInput } from "@/components/ui/Field";
 import CopyButton from "@/components/ui/CopyButton";
+import {
+  buildCurlArgv,
+  buildNmapArgv,
+  serializePosixArgv,
+  type CurlMethod,
+} from "@/lib/commands";
 
 type Kind = "nmap" | "curl";
 
@@ -21,16 +27,17 @@ function NmapBuilder() {
   const [sv, setSv] = useState(true); // service/version detection
   const [pn, setPn] = useState(false); // skip host discovery
 
-  // Assemble flags in a predictable order, skipping anything empty.
-  const flags: string[] = [scan];
-  if (sv) flags.push("-sV");
-  if (pn) flags.push("-Pn");
-  flags.push(`-${timing}`);
-  if (ports === "all") flags.push("-p-");
-  else if (ports === "custom" && customPorts.trim())
-    flags.push(`-p ${customPorts.trim()}`);
-
-  const command = `nmap ${flags.join(" ")} ${target.trim() || "<target>"}`;
+  const command = serializePosixArgv(
+    buildNmapArgv({
+      target,
+      scan: scan as "-sS" | "-sT" | "-sU" | "-sn",
+      ports: ports as "top" | "all" | "custom",
+      customPorts,
+      timing: timing as "T2" | "T3" | "T4" | "T5",
+      serviceVersion: sv,
+      skipDiscovery: pn,
+    })
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -114,17 +121,17 @@ function CurlBuilder() {
   const [insecure, setInsecure] = useState(false); // -k
   const [verbose, setVerbose] = useState(false); // -v
 
-  const parts: string[] = ["curl"];
-  if (method !== "GET") parts.push(`-X ${method}`);
-  if (follow) parts.push("-L");
-  if (insecure) parts.push("-k");
-  if (verbose) parts.push("-v");
-  if (header.trim()) parts.push(`-H "${header.trim()}"`);
-  // Quote the body so shells treat it as one argument.
-  if (body.trim()) parts.push(`-d '${body.trim()}'`);
-  parts.push(`"${url.trim() || "https://example.com"}"`);
-
-  const command = parts.join(" ");
+  const command = serializePosixArgv(
+    buildCurlArgv({
+      url,
+      method: method as CurlMethod,
+      header,
+      body,
+      follow,
+      insecure,
+      verbose,
+    })
+  );
 
   return (
     <div className="flex flex-col gap-4">

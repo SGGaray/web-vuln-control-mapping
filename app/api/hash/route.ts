@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createHash } from "node:crypto";
+import { readJsonObject } from "../../../lib/http-json";
+import {
+  computeHashes,
+  MAX_BODY_BYTES,
+  MAX_TEXT_LENGTH,
+  normalizeAlgorithms,
+} from "../../../lib/hash";
 
 /**
  * POST /api/hash
@@ -10,52 +16,37 @@ import { createHash } from "node:crypto";
  * supports MD5, which the Web Crypto API does not. We only allow a fixed set
  * of algorithms so a caller cannot request something unexpected.
  */
-const ALLOWED = new Set(["md5", "sha1", "sha256"]);
-
 export async function POST(req: NextRequest) {
-  let body: { text?: unknown; algorithms?: unknown };
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
-  }
-
-  const { text, algorithms } = body;
+  const parsed = await readJsonObject(req, MAX_BODY_BYTES);
+  if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: parsed.status });
+  const { text, algorithms } = parsed.value;
 
   // Basic input validation. Text must be a string.
   if (typeof text !== "string") {
     return NextResponse.json(
-      { error: "Field 'text' must be a string." },
+      { error: { code: "INVALID_TEXT", message: "Field 'text' must be a string." } },
       { status: 400 }
     );
   }
 
   // Cap input size to prevent a caller from tying up CPU with a huge payload.
-  const MAX_LENGTH = 100_000;
-  if (text.length > MAX_LENGTH) {
+  if (text.length > MAX_TEXT_LENGTH) {
     return NextResponse.json(
-      { error: `Field 'text' exceeds the maximum length of ${MAX_LENGTH} characters.` },
+      {
+        error: {
+          code: "TEXT_TOO_LONG",
+          message: `Field 'text' exceeds the maximum length of ${MAX_TEXT_LENGTH} characters.`,
+        },
+      },
       { status: 413 }
     );
   }
 
-  // Default to all algorithms, but keep only ones we explicitly allow.
-  const requested = Array.isArray(algorithms) ? algorithms : [...ALLOWED];
-  const algos = requested.filter(
-    (a): a is string => typeof a === "string" && ALLOWED.has(a)
-  );
+  // Default to all algorithms; reject anything outside the explicit allowlist.
+  const normalized = normalizeAlgorithms(algorithms);
+  if (!normalized.ok) return NextResponse.json({ error: normalized.error }, { status: 400 });
 
-  if (algos.length === 0) {
-    return NextResponse.json(
-      { error: "No valid algorithms requested." },
-      { status: 400 }
-    );
-  }
-
-  const hashes: Record<string, string> = {};
-  for (const algo of algos) {
-    hashes[algo] = createHash(algo).update(text).digest("hex");
-  }
+  const hashes = computeHashes(text, normalized.algorithms);
 
   return NextResponse.json({ hashes });
 }

@@ -5,26 +5,11 @@ import { ArrowRightLeft } from "lucide-react";
 import { ToolShell, Notice } from "@/components/ui/ToolShell";
 import { Field, TextArea } from "@/components/ui/Field";
 import CopyButton from "@/components/ui/CopyButton";
+import {
+  convertBase64Text,
+} from "@/lib/base64-text";
 
 type Mode = "encode" | "decode";
-
-/**
- * Base64 works on bytes, but JS strings are UTF-16. btoa/atob only handle
- * Latin1, so anything with emoji or accents breaks. We bridge through
- * TextEncoder/TextDecoder so Unicode round trips correctly.
- */
-function encodeBase64(input: string): string {
-  const bytes = new TextEncoder().encode(input);
-  let binary = "";
-  bytes.forEach((b) => (binary += String.fromCharCode(b)));
-  return btoa(binary);
-}
-
-function decodeBase64(input: string): string {
-  const binary = atob(input.trim());
-  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
-  return new TextDecoder().decode(bytes);
-}
 
 export default function Base64Tool() {
   const [mode, setMode] = useState<Mode>("encode");
@@ -35,17 +20,15 @@ export default function Base64Tool() {
   let output = "";
   let error = "";
   if (input) {
-    try {
-      output = mode === "encode" ? encodeBase64(input) : decodeBase64(input);
-    } catch {
-      error = "Input is not valid Base64. Check for stray characters or padding.";
-    }
+    const result = convertBase64Text(mode, input);
+    if (result.ok) output = result.value;
+    else error = result.error;
   }
 
   return (
     <ToolShell
       title="Base64"
-      blurb="Encode text to Base64 or decode it back. Unicode safe."
+      blurb="Convert Base64 to or from UTF-8 text. Base64 whitespace is ignored; invalid UTF-8 is rejected."
     >
       {/* Mode switch */}
       <div className="flex gap-1">

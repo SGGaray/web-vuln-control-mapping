@@ -67,7 +67,7 @@ export const payloads: Payload[] = [
     context: "Form field",
     value: "<img src=x onerror=alert(1)>",
     explanation:
-      "Uses an event handler, so it fires even when script tags are stripped.",
+      "Uses an event handler to test active attributes when script tags are stripped.",
     tags: ["basic", "event-handler"],
   },
   {
@@ -76,7 +76,7 @@ export const payloads: Payload[] = [
     context: "Cookie",
     value: "<svg onload=alert(1)>",
     explanation:
-      "An SVG element that runs on load. Handy where a cookie value is reflected.",
+      "An SVG load-handler test for values inserted into an active HTML context.",
     tags: ["basic", "event-handler"],
   },
   {
@@ -85,7 +85,7 @@ export const payloads: Payload[] = [
     context: "URL parameter",
     value: "%3Cscript%3Ealert(1)%3C%2Fscript%3E",
     explanation:
-      "URL encoded angle brackets, to test filters that decode before rendering.",
+      "Percent-encoded markup for tracing transport decoding before a browser sink.",
     tags: ["encoded", "url"],
   },
   {
@@ -94,7 +94,7 @@ export const payloads: Payload[] = [
     context: "Form field",
     value: "&#60;script&#62;alert(1)&#60;/script&#62;",
     explanation:
-      "HTML entity encoded. Checks whether entities are decoded back into markup.",
+      "Character references for tracing decoding and any later markup insertion.",
     tags: ["encoded", "html-entity"],
   },
   {
@@ -103,7 +103,7 @@ export const payloads: Payload[] = [
     context: "Request body",
     value: "\\u003cscript\\u003ealert(1)\\u003c/script\\u003e",
     explanation:
-      "Unicode escapes for a JSON or JavaScript string context that unescapes input.",
+      "Unicode escapes for tracing JSON or JavaScript decoding before an unsafe sink.",
     tags: ["encoded", "unicode"],
   },
   {
@@ -195,7 +195,7 @@ export const payloads: Payload[] = [
     context: "HTTP header",
     value: "' OR SLEEP(5)-- ",
     explanation:
-      "A time delay (MySQL) via a header like User-Agent. A slow response signals blind injection.",
+      "A MySQL delay probe whose repeated, controlled timing difference may signal blind injection.",
     tags: ["time-based", "blind", "mysql"],
   },
 
@@ -215,7 +215,7 @@ export const payloads: Payload[] = [
     context: "Form field",
     value: "&& whoami",
     explanation:
-      "Runs whoami only if the first command succeeds. A benign confirmation.",
+      "Tests whether a POSIX shell honors a conditional separator before whoami.",
     tags: ["basic", "unix", "chaining"],
   },
   {
@@ -233,7 +233,7 @@ export const payloads: Payload[] = [
     context: "Request body",
     value: "$(id)",
     explanation:
-      "Command substitution. If id runs, unsanitized input reaches a shell.",
+      "Tests POSIX command substitution when input may reach a shell parser.",
     tags: ["substitution", "unix"],
   },
   {

@@ -37,7 +37,7 @@ export const tools: Tool[] = [
   {
     id: "payloads",
     name: "Payload Reference",
-    blurb: "Reference payloads mapped to risk and controls.",
+    blurb: "Reference payloads mapped to defensive guidance.",
     category: "Recon",
     icon: Bug,
     component: PayloadGenerator,

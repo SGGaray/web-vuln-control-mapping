@@ -31,7 +31,11 @@ export function ToolShell({
  */
 export function Notice({ children }: { children: ReactNode }) {
   return (
-    <div className="flex items-start gap-2 rounded border border-line bg-raised px-3 py-2 text-sm text-fg">
+    <div
+      role="status"
+      aria-live="polite"
+      className="flex items-start gap-2 rounded border border-line bg-raised px-3 py-2 text-sm text-fg"
+    >
       <AlertTriangle size={15} className="mt-0.5 shrink-0 text-muted" />
       <span className="font-mono">{children}</span>
     </div>

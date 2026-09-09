@@ -1,9 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ToolShell, Notice } from "@/components/ui/ToolShell";
 import { Field, TextArea } from "@/components/ui/Field";
 import CopyButton from "@/components/ui/CopyButton";
+import { HashRequestError, requestHashes } from "@/lib/hash-request";
+import {
+  copyableResult,
+  editResultInput,
+  initialResultState,
+  rejectResult,
+  resolveResult,
+  startResult,
+  type ResultState,
+} from "@/lib/result-state";
 
 // Node's crypto (used by the API route) supports MD5, which the browser's
 // Web Crypto does not. That is the main reason hashing lives on the server.
@@ -11,40 +21,31 @@ const ALGORITHMS = ["md5", "sha1", "sha256"] as const;
 type Algo = (typeof ALGORITHMS)[number];
 
 export default function HashTool() {
-  const [input, setInput] = useState("");
-  const [hashes, setHashes] = useState<Record<Algo, string> | null>(null);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [state, setState] = useState<ResultState<Record<Algo, string>>>(initialResultState);
+  const activeController = useRef<AbortController | null>(null);
+  const input = state.input;
 
   // Debounce the request so we are not hashing on every single keystroke.
   useEffect(() => {
     if (!input) {
-      setHashes(null);
-      setError("");
       return;
     }
 
+    const requestVersion = state.version;
     const controller = new AbortController();
+    activeController.current = controller;
     const timer = setTimeout(async () => {
-      setLoading(true);
-      setError("");
       try {
-        const res = await fetch("/api/hash", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: input, algorithms: ALGORITHMS }),
-          signal: controller.signal,
-        });
-        if (!res.ok) throw new Error("Request failed");
-        const data = await res.json();
-        setHashes(data.hashes);
+        const hashes = await requestHashes(input, ALGORITHMS, controller.signal);
+        setState((current) => resolveResult(current, requestVersion, hashes));
       } catch (err) {
-        // AbortError just means a newer keystroke superseded this call.
-        if ((err as Error).name !== "AbortError") {
-          setError("Could not reach the hashing service. Is the server running?");
+        if (!(err instanceof HashRequestError && err.kind === "aborted")) {
+          setState((current) => rejectResult(
+            current,
+            requestVersion,
+            (err as Error).message || "Could not reach the hashing service."
+          ));
         }
-      } finally {
-        setLoading(false);
       }
     }, 250);
 
@@ -52,7 +53,15 @@ export default function HashTool() {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [input]);
+  }, [input, state.version]);
+
+  function updateInput(value: string) {
+    activeController.current?.abort();
+    setState((current) => {
+      const edited = editResultInput(current, value);
+      return value ? startResult(edited) : edited;
+    });
+  }
 
   return (
     <ToolShell
@@ -62,16 +71,16 @@ export default function HashTool() {
       <Field label="Input">
         <TextArea
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e) => updateInput(e.target.value)}
           placeholder="admin:password"
         />
       </Field>
 
-      {error && <Notice>{error}</Notice>}
+      {state.status === "error" && <Notice>{state.message}</Notice>}
 
       <div className="flex flex-col gap-3">
         {ALGORITHMS.map((algo) => {
-          const value = hashes?.[algo] ?? "";
+          const value = copyableResult(state)?.[algo] ?? "";
           return (
             <Field
               key={algo}
@@ -79,7 +88,7 @@ export default function HashTool() {
               action={value ? <CopyButton value={value} /> : null}
             >
               <div className="terminal min-h-[44px]">
-                {loading ? "computing..." : value || "\u00a0"}
+                {state.status === "loading" ? "computing..." : value || "\u00a0"}
               </div>
             </Field>
           );

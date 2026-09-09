@@ -15,7 +15,7 @@ export default function Sidebar({
   onSelect: (id: string) => void;
 }) {
   return (
-    <nav className="flex h-full flex-col">
+    <nav aria-label="Tools" className="flex h-full flex-col">
       {/* Wordmark */}
       <div className="flex items-center gap-2 border-b border-line px-5 py-4">
         <span className="font-mono text-sm text-bright">payload</span>

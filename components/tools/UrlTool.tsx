@@ -5,6 +5,7 @@ import { ArrowRightLeft } from "lucide-react";
 import { ToolShell, Notice } from "@/components/ui/ToolShell";
 import { Field, TextArea } from "@/components/ui/Field";
 import CopyButton from "@/components/ui/CopyButton";
+import { decodeUrlComponent, encodeUrlComponent } from "@/lib/url-component";
 
 type Mode = "encode" | "decode";
 
@@ -16,13 +17,10 @@ export default function UrlTool() {
   let error = "";
   if (input) {
     try {
-      // encodeURIComponent escapes everything that is not URL safe, which is
-      // the right default for query values. decodeURIComponent reverses it and
-      // throws on malformed percent sequences, so we catch that below.
       output =
         mode === "encode"
-          ? encodeURIComponent(input)
-          : decodeURIComponent(input);
+          ? encodeUrlComponent(input)
+          : decodeUrlComponent(input);
     } catch {
       error = "Malformed percent encoding. Look for a lone % or bad sequence.";
     }

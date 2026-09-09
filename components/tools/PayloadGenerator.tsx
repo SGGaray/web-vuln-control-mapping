@@ -16,35 +16,20 @@ import {
   payloadContexts,
   allTags,
   type Payload,
-  type PayloadCategory,
 } from "@/lib/payloads";
 import { explanations } from "@/lib/explain";
-import { filterData, countValues, type Predicate } from "@/lib/facets";
+import {
+  getMappingBundle,
+  type MappingRelationship,
+} from "@/lib/mappings";
+import { filterData, countValues } from "@/lib/facets";
+import {
+  buildPayloadPredicates,
+  getPayloadContextValues,
+  getPayloadTagValues,
+  type PayloadCategoryFilter,
+} from "@/lib/payload-filter";
 import FacetRow from "@/components/ui/FacetRow";
-
-// "All" plus the real categories, used for the top filter row.
-type CategoryFilter = "All" | PayloadCategory;
-
-// Value extractors for each facet, defined at module scope so they are stable
-// references and never trigger a memo recompute on their own.
-const getContextValues = (p: Payload): readonly string[] => [p.context];
-const getTagValues = (p: Payload): readonly string[] => p.tags;
-
-// The non facet filters: category (exact) and free text search. Built from
-// plain state so the memo dependency lists below stay honest and minimal.
-function buildPredicates(
-  category: CategoryFilter,
-  q: string
-): Predicate<Payload>[] {
-  return [
-    (p) => category === "All" || p.category === category,
-    (p) =>
-      q === "" ||
-      p.value.toLowerCase().includes(q) ||
-      p.explanation.toLowerCase().includes(q) ||
-      p.tags.some((t) => t.toLowerCase().includes(q)),
-  ];
-}
 
 // Returns a toggler that adds or removes a value in a Set backed filter,
 // producing a fresh Set so React sees a new reference. Shared by every facet.
@@ -52,9 +37,109 @@ function makeToggle(setter: Dispatch<SetStateAction<Set<string>>>) {
   return (value: string) =>
     setter((prev) => {
       const next = new Set(prev);
-      next.has(value) ? next.delete(value) : next.add(value);
+      if (next.has(value)) {
+        next.delete(value);
+      } else {
+        next.add(value);
+      }
       return next;
     });
+}
+
+function relationshipStyle(relationship: MappingRelationship): string {
+  switch (relationship) {
+    case "direct":
+      return "border-bright bg-bright text-base";
+    case "strong":
+      return "border-muted bg-raised text-bright";
+    case "classification":
+      return "border-muted text-fg";
+    case "supporting":
+      return "border-line text-muted";
+  }
+}
+
+function ExplainDetails({ payload }: { payload: Payload }) {
+  const explanation = explanations[payload.id];
+  const bundle = getMappingBundle(payload.category);
+
+  return (
+    <div className="flex flex-col gap-3 rounded border border-line bg-base/40 p-3">
+      {(
+        [
+          ["Summary", explanation.summary],
+          ["Why it works", explanation.why],
+          ["When to use", explanation.when],
+          ["Preconditions", explanation.preconditions],
+          ["Observable signal", explanation.signal],
+          ["Limitations", explanation.limitations],
+        ] as const
+      ).map(([label, value]) =>
+        value ? (
+          <div key={label} className="flex flex-col gap-1">
+            <span className="eyebrow">{label}</span>
+            <p className="text-sm text-fg">{value}</p>
+          </div>
+        ) : null
+      )}
+
+      <div className="flex flex-col gap-1 border-t border-line pt-3">
+        <span className="eyebrow text-bright">Mitigation technique</span>
+        <p className="text-sm text-fg">{explanation.mitigation}</p>
+      </div>
+
+      <div className="flex flex-col gap-3 border-t border-line pt-3">
+        <div className="flex flex-col gap-1">
+          <span className="eyebrow text-bright">Control mappings</span>
+          <p className="text-xs leading-relaxed text-muted">
+            These relationships classify or support the weakness family. They
+            are not evidence that a control is implemented, effective, or that
+            a system is compliant.
+          </p>
+          <div className="flex flex-wrap gap-2 font-mono text-[10px] text-muted">
+            <span>Implementation evidence: {bundle.implementationEvidence}</span>
+            <span aria-hidden="true">·</span>
+            <span>Effectiveness evidence: {bundle.effectivenessEvidence}</span>
+          </div>
+        </div>
+
+        {bundle.mappings.map((mapping) => (
+          <section
+            key={`${mapping.framework}:${mapping.controlId}`}
+            className="flex flex-col gap-2 rounded border border-line bg-surface p-3"
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-mono text-xs text-bright">
+                {mapping.framework} {mapping.version} · {mapping.controlId}
+              </span>
+              <span
+                className={`rounded border px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider ${relationshipStyle(
+                  mapping.relationship
+                )}`}
+              >
+                {mapping.relationship}
+              </span>
+            </div>
+            <p className="text-xs font-medium text-fg">{mapping.title}</p>
+            <p className="text-xs leading-relaxed text-fg">
+              {mapping.rationale}
+            </p>
+            <p className="text-xs leading-relaxed text-muted">
+              Limitation: {mapping.limitation}
+            </p>
+            <a
+              href={mapping.source.url}
+              target="_blank"
+              rel="noreferrer"
+              className="w-fit font-mono text-[10px] text-muted underline decoration-line underline-offset-4 hover:text-bright"
+            >
+              Source: {mapping.source.label} · {mapping.source.provenance}
+            </a>
+          </section>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 /**
@@ -100,7 +185,7 @@ function Highlight({ text, query }: { text: string; query: string }) {
 }
 
 export default function PayloadGenerator() {
-  const [category, setCategory] = useState<CategoryFilter>("All");
+  const [category, setCategory] = useState<PayloadCategoryFilter>("All");
   // A set of active tag filters. Empty means "no tag filter".
   const [tags, setTags] = useState<Set<string>>(new Set());
   // A set of active context filters, same OR behavior as tags.
@@ -139,9 +224,9 @@ export default function PayloadGenerator() {
     () =>
       countValues(
         payloads,
-        [{ values: getTagValues, selected: tags }],
-        buildPredicates(category, q),
-        getContextValues
+        [{ values: getPayloadTagValues, selected: tags }],
+        buildPayloadPredicates(category, q),
+        getPayloadContextValues
       ),
     [category, q, tags]
   );
@@ -152,9 +237,9 @@ export default function PayloadGenerator() {
     () =>
       countValues(
         payloads,
-        [{ values: getContextValues, selected: contexts }],
-        buildPredicates(category, q),
-        getTagValues
+        [{ values: getPayloadContextValues, selected: contexts }],
+        buildPayloadPredicates(category, q),
+        getPayloadTagValues
       ),
     [category, q, contexts]
   );
@@ -165,17 +250,17 @@ export default function PayloadGenerator() {
       filterData(
         payloads,
         [
-          { values: getContextValues, selected: contexts },
-          { values: getTagValues, selected: tags },
+          { values: getPayloadContextValues, selected: contexts },
+          { values: getPayloadTagValues, selected: tags },
         ],
-        buildPredicates(category, q)
+        buildPayloadPredicates(category, q)
       ),
     [category, q, contexts, tags]
   );
 
   return (
     <ToolShell
-      title="Payload Generator"
+      title="Payload Reference"
       blurb="A reference set of basic payloads with explanations. Search or filter by category, context, and tag."
     >
       {/* Scope reminder. This module is a study aid, nothing here runs. */}
@@ -215,7 +300,7 @@ export default function PayloadGenerator() {
 
       {/* Category filter */}
       <div className="flex flex-wrap gap-1">
-        {(["All", ...payloadCategories] as CategoryFilter[]).map((c) => (
+        {(["All", ...payloadCategories] as PayloadCategoryFilter[]).map((c) => (
           <button
             key={c}
             onClick={() => setCategory(c)}
@@ -309,41 +394,7 @@ export default function PayloadGenerator() {
                   Explain
                 </button>
 
-                {openIds.has(p.id) && (
-                  <div className="flex flex-col gap-3 rounded border border-line bg-base/40 p-3">
-                    {(
-                      [
-                        ["Summary", explanations[p.id].summary],
-                        ["Why it works", explanations[p.id].why],
-                        ["When to use", explanations[p.id].when],
-                      ] as const
-                    ).map(([label, text]) => (
-                      <div key={label} className="flex flex-col gap-1">
-                        <span className="eyebrow">{label}</span>
-                        <p className="text-sm text-fg">{text}</p>
-                      </div>
-                    ))}
-
-                    {/* Governance mapping: the reason this project exists.
-                        Kept visually distinct from the conceptual fields
-                        above with a top border, since this is risk and
-                        control content, not exploit explanation. */}
-                    <div className="flex flex-col gap-2 border-t border-line pt-3">
-                      {(
-                        [
-                          ["OWASP category", explanations[p.id].owasp],
-                          ["Mapped control", explanations[p.id].control],
-                          ["Mitigation", explanations[p.id].mitigation],
-                        ] as const
-                      ).map(([label, text]) => (
-                        <div key={label} className="flex flex-col gap-1">
-                          <span className="eyebrow text-bright">{label}</span>
-                          <p className="text-sm text-fg">{text}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                {openIds.has(p.id) && <ExplainDetails payload={p} />}
               </div>
             )}
 
