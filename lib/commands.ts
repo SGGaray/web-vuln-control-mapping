@@ -20,6 +20,17 @@ export type CurlOptions = {
   verbose: boolean;
 };
 
+export class CurlHeaderFileSyntaxError extends Error {
+  constructor() {
+    super("curl header-file syntax is not allowed; provide a literal HTTP header.");
+    this.name = "CurlHeaderFileSyntaxError";
+  }
+}
+
+export function isCurlHeaderFileSyntax(value: string): boolean {
+  return value.startsWith("@");
+}
+
 /** Build argv first so user input can never merge with an option. */
 export function buildNmapArgv(options: NmapOptions): string[] {
   const argv = ["nmap", options.scan];
@@ -43,6 +54,10 @@ export function buildNmapArgv(options: NmapOptions): string[] {
  * as filenames. --data-raw preserves the body as a literal argument.
  */
 export function buildCurlArgv(options: CurlOptions): string[] {
+  if (isCurlHeaderFileSyntax(options.header)) {
+    throw new CurlHeaderFileSyntaxError();
+  }
+
   const argv = ["curl"];
 
   if (options.method === "HEAD") argv.push("--head");

@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { Terminal } from "lucide-react";
-import { ToolShell } from "@/components/ui/ToolShell";
+import { Notice, ToolShell } from "@/components/ui/ToolShell";
 import { Field, TextInput } from "@/components/ui/Field";
 import CopyButton from "@/components/ui/CopyButton";
 import {
   buildCurlArgv,
   buildNmapArgv,
+  isCurlHeaderFileSyntax,
   serializePosixArgv,
   type CurlMethod,
 } from "@/lib/commands";
@@ -125,17 +126,20 @@ function CurlBuilder() {
   const [insecure, setInsecure] = useState(false); // -k
   const [verbose, setVerbose] = useState(false); // -v
 
-  const command = serializePosixArgv(
-    buildCurlArgv({
-      url,
-      method: method as CurlMethod,
-      header,
-      body,
-      follow,
-      insecure,
-      verbose,
-    })
-  );
+  const hasHeaderFileSyntax = isCurlHeaderFileSyntax(header);
+  const command = hasHeaderFileSyntax
+    ? null
+    : serializePosixArgv(
+        buildCurlArgv({
+          url,
+          method: method as CurlMethod,
+          header,
+          body,
+          follow,
+          insecure,
+          verbose,
+        })
+      );
 
   return (
     <div className="flex flex-col gap-4">
@@ -166,6 +170,10 @@ function CurlBuilder() {
         />
       </Field>
 
+      {hasHeaderFileSyntax && (
+        <Notice>{t("commands.errors.headerFileSyntax")}</Notice>
+      )}
+
       <Field label={t("commands.body", { optional: t("common.optional") })}>
         <TextInput
           value={body}
@@ -180,7 +188,7 @@ function CurlBuilder() {
         <Toggle label={t("commands.verbose")} checked={verbose} onChange={setVerbose} />
       </div>
 
-      <Output command={command} />
+      {command !== null && <Output command={command} />}
     </div>
   );
 }

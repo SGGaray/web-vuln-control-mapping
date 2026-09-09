@@ -164,6 +164,7 @@ export const en = {
   "commands.skipDiscovery": "-Pn skip discovery",
   "commands.method": "Method",
   "commands.header": "Header ({optional})",
+  "commands.errors.headerFileSyntax": "The header must be literal. curl @file syntax is not allowed.",
   "commands.body": "Body ({optional})",
   "commands.followRedirects": "-L follow redirects",
   "commands.insecureTls": "-k insecure TLS",

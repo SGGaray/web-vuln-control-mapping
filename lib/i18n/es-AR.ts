@@ -162,6 +162,7 @@ export const esAR = {
   "commands.skipDiscovery": "-Pn omitir descubrimiento",
   "commands.method": "Método",
   "commands.header": "Header ({optional})",
+  "commands.errors.headerFileSyntax": "El header debe ser literal. La sintaxis @archivo de curl no está permitida.",
   "commands.body": "Cuerpo ({optional})",
   "commands.followRedirects": "-L seguir redirecciones",
   "commands.insecureTls": "-k TLS inseguro",

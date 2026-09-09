@@ -21,9 +21,118 @@ describe("HTTP response parser", () => {
     expect(status("HTTP/1.1 200 OK\nContent-Type: text/plain\n\nContent-Security-Policy: default-src 'none'", "Content-Security-Policy")).toBe("not-evaluated");
   });
 
+  it("ignores an ordinary response body", () => {
+    const result = analyzeHeaderInput(
+      "HTTP/1.1 200 OK\nContent-Type: text/plain\nX-Test: real\n\nordinary body"
+    );
+    expect(result.responses).toHaveLength(1);
+    expect(result.selectedResponse?.headers).toEqual([
+      { name: "Content-Type", value: "text/plain" },
+      { name: "X-Test", value: "real" },
+    ]);
+  });
+
+  it("does not promote a status line from the response body", () => {
+    const result = analyzeHeaderInput(
+      "HTTP/1.1 200 OK\nContent-Type: text/plain\n\nHTTP/1.1 200 OK\nX-Frame-Options: DENY"
+    );
+    expect(result.responses).toHaveLength(1);
+    expect(result.selectedResponse?.headers).toEqual([
+      { name: "Content-Type", value: "text/plain" },
+    ]);
+  });
+
+  it("does not let a body status line replace header-only evidence", () => {
+    const result = analyzeHeaderInput(
+      "Content-Type: text/plain\nX-Test: real\n\nHTTP/1.1 200 OK\nX-Frame-Options: DENY"
+    );
+    expect(result.responses).toHaveLength(1);
+    expect(result.selectedResponse?.statusLine).toBeUndefined();
+    expect(result.selectedResponse?.headers).toEqual([
+      { name: "Content-Type", value: "text/plain" },
+      { name: "X-Test", value: "real" },
+    ]);
+    expect(status(
+      "Content-Type: text/plain\nX-Test: real\n\nHTTP/1.1 200 OK\nX-Frame-Options: DENY",
+      "X-Frame-Options"
+    )).toBe("not-evaluated");
+  });
+
+  it.each(["\n", "\r\n"])(
+    "does not promote the Astra fixture from a body using %j line endings",
+    (newline) => {
+      const body = [
+        "HTTP/1.1 200 OK",
+        "Content-Security-Policy: default-src 'none'",
+        "X-Frame-Options: DENY",
+        "",
+      ].join(newline);
+      const raw = [
+        "HTTP/1.1 200 OK",
+        "Content-Type: text/html",
+        `Content-Length: ${body.length}`,
+        "",
+        body,
+      ].join(newline);
+      const result = analyzeHeaderInput(raw);
+
+      expect(result.responses).toHaveLength(1);
+      expect(result.selectedResponse?.headers.map((header) => header.name)).toEqual([
+        "Content-Type",
+        "Content-Length",
+      ]);
+      expect(status(raw, "Content-Security-Policy")).toBe("not-observed");
+      expect(status(raw, "X-Frame-Options")).toBe("not-observed");
+    }
+  );
+
+  it("does not manufacture evidence from incomplete body framing", () => {
+    const result = analyzeHeaderInput(
+      "HTTP/1.1 200 OK\nContent-Length: 200\n\npartial body\nHTTP/1.1 200 OK\nX-Content-Type-Options: nosniff"
+    );
+    expect(result.responses).toHaveLength(1);
+    expect(status(
+      "HTTP/1.1 200 OK\nContent-Length: 200\n\npartial body\nHTTP/1.1 200 OK\nX-Content-Type-Options: nosniff",
+      "X-Content-Type-Options"
+    )).toBe("not-observed");
+  });
+
+  it("preserves unambiguous concatenated responses after Content-Length zero", () => {
+    const result = analyzeHeaderInput(
+      "HTTP/1.1 200 OK\nContent-Length: 0\n\nHTTP/1.1 201 Created\nX-Test: final"
+    );
+    expect(result.responses).toHaveLength(2);
+    expect(result.selectedResponse?.statusCode).toBe(201);
+    expect(result.selectedResponse?.headers).toEqual([{ name: "X-Test", value: "final" }]);
+  });
+
+  it("does not treat a partially numeric Content-Length as bodyless framing", () => {
+    const result = analyzeHeaderInput(
+      "HTTP/1.1 200 OK\nContent-Length: 0junk\n\nHTTP/1.1 201 Created\nX-Test: false-evidence"
+    );
+    expect(result.responses).toHaveLength(1);
+    expect(result.selectedResponse?.statusCode).toBe(200);
+  });
+
+  it("does not trust Content-Length zero when Transfer-Encoding is present", () => {
+    const result = analyzeHeaderInput(
+      "HTTP/1.1 200 OK\nTransfer-Encoding: chunked\nContent-Length: 0\n\nHTTP/1.1 201 Created\nX-Test: false-evidence"
+    );
+    expect(result.responses).toHaveLength(1);
+    expect(result.selectedResponse?.statusCode).toBe(200);
+  });
+
+  it("does not guess that a redirect with unspecified body length is bodyless", () => {
+    const result = analyzeHeaderInput(
+      "HTTP/1.1 302 Found\nLocation: /final\n\nHTTP/1.1 200 OK\nX-Test: ambiguous"
+    );
+    expect(result.responses).toHaveLength(1);
+    expect(result.selectedResponse?.statusCode).toBe(302);
+  });
+
   it("selects the final non-interim response after redirects", () => {
     const result = analyzeHeaderInput(
-      "HTTP/1.1 301 Moved\nContent-Security-Policy: default-src 'none'\nLocation: /final\n\nHTTP/1.1 200 OK\nX-Content-Type-Options: nosniff\n\nbody"
+      "HTTP/1.1 301 Moved\nContent-Security-Policy: default-src 'none'\nLocation: /final\nContent-Length: 0\n\nHTTP/1.1 200 OK\nX-Content-Type-Options: nosniff\n\nbody"
     );
     expect(result.responses).toHaveLength(2);
     expect(result.selectedResponse?.statusCode).toBe(200);

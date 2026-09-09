@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildCurlArgv,
   buildNmapArgv,
+  isCurlHeaderFileSyntax,
   serializePosixArgv,
   type CurlOptions,
 } from "./commands";
@@ -65,6 +66,31 @@ describe("command argv builders", () => {
       "--header",
       header,
     ]);
+  });
+
+  it.each(["@filename", "@/tmp/file", "@-", "@/dev/stdin"])(
+    "rejects curl header-file syntax: %s",
+    (header) => {
+      expect(isCurlHeaderFileSyntax(header)).toBe(true);
+      expect(() => buildCurlArgv({ ...curlDefaults, header })).toThrow(
+        /header-file syntax/i
+      );
+    }
+  );
+
+  it.each([
+    "Authorization: Bearer TOKEN",
+    "X-Test: value",
+    "Header: value with spaces",
+    'Header: "quoted"',
+    "Header: $()",
+    "Header: ;",
+    "X-Unicode: acción 🚀",
+    "X-Lines: one\ntwo",
+  ])("keeps an ordinary literal header valid: %s", (header) => {
+    expect(isCurlHeaderFileSyntax(header)).toBe(false);
+    const argv = buildCurlArgv({ ...curlDefaults, header });
+    expect(argv[argv.indexOf("--header") + 1]).toBe(header);
   });
 
   it("uses data-raw so @file remains literal and preserves whitespace", () => {

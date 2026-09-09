@@ -112,6 +112,27 @@ describe("independent curl semantics against localhost", () => {
     }
   });
 
+  it("rejects a synthetic header file before curl can read or send it", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "wvcm-curl-header-"));
+    const path = join(directory, "synthetic-headers.txt");
+    try {
+      await writeFile(path, "X-Synthetic-Audit: LOCAL_ONLY\n", "utf8");
+      await expect(executeCurl({ header: `@${path}` })).rejects.toThrow(
+        /header-file syntax/i
+      );
+      expect(observations).toEqual([]);
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects @/dev/stdin before curl is invoked", async () => {
+    await expect(executeCurl({ header: "@/dev/stdin" })).rejects.toThrow(
+      /header-file syntax/i
+    );
+    expect(observations).toEqual([]);
+  });
+
   it("preserves body spaces and newlines", async () => {
     const body = "  payload  \nline two\n";
     expect(await executeCurl({ method: "POST", body })).toEqual({ method: "POST", body });

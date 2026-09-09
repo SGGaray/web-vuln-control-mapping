@@ -45,13 +45,39 @@ function parseHeaderLine(line: string): HeaderEntry | null {
   return { name, value: line.slice(colon + 1).trim() };
 }
 
+function canStartFollowingResponse(response: ParsedHttpResponse): boolean {
+  const status = response.statusCode;
+  if (status === undefined) return false;
+  if ((status >= 100 && status < 200) || status === 204 || status === 304) {
+    return true;
+  }
+
+  const contentLengths = response.headers
+    .filter((header) => header.name.toLowerCase() === "content-length")
+    .map((header) => header.value.trim());
+  const hasTransferEncoding = response.headers.some(
+    (header) => header.name.toLowerCase() === "transfer-encoding"
+  );
+  if (
+    !hasTransferEncoding &&
+    contentLengths.length > 0 &&
+    contentLengths.every((value) => /^0+$/.test(value))
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 /** Parse a header-only block or one/many complete HTTP responses. */
 export function parseHttpResponses(raw: string): {
   responses: ParsedHttpResponse[];
   diagnostics: HeaderDiagnostic[];
 } {
   const lines = raw.replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n");
-  const hasStatusLine = lines.some((line) => STATUS_LINE.test(line.trim()));
+  const firstNonEmptyLine = lines.find((line) => line.trim() !== "");
+  const hasStatusLine =
+    firstNonEmptyLine !== undefined && STATUS_LINE.test(firstNonEmptyLine.trim());
   const diagnostics: HeaderDiagnostic[] = [];
 
   if (!hasStatusLine) {
@@ -88,12 +114,12 @@ export function parseHttpResponses(raw: string): {
   const responses: ParsedHttpResponse[] = [];
   let current: ParsedHttpResponse | null = null;
   let inHeaders = false;
+  let atResponseBoundary = false;
 
   lines.forEach((line, index) => {
     const trimmed = line.trim();
     const statusMatch = trimmed.match(STATUS_LINE);
-    if (statusMatch) {
-      if (current) responses.push(current);
+    if (!current && statusMatch) {
       current = {
         statusLine: trimmed,
         statusCode: Number(statusMatch[1]),
@@ -114,9 +140,29 @@ export function parseHttpResponses(raw: string): {
       }
       return;
     }
-    if (!inHeaders) return;
+    if (!inHeaders) {
+      if (
+        atResponseBoundary &&
+        statusMatch &&
+        canStartFollowingResponse(current)
+      ) {
+        responses.push(current);
+        current = {
+          statusLine: trimmed,
+          statusCode: Number(statusMatch[1]),
+          headers: [],
+          diagnostics: [],
+        };
+        inHeaders = true;
+        atResponseBoundary = false;
+        return;
+      }
+      if (trimmed !== "") atResponseBoundary = false;
+      return;
+    }
     if (trimmed === "") {
       inHeaders = false;
+      atResponseBoundary = true;
       return;
     }
 

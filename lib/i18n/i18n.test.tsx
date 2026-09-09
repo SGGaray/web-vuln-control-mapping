@@ -129,4 +129,13 @@ describe("locale contract", () => {
       "mappings.relationship.direct",
     ]));
   });
+
+  it("keeps the curl header-file validation semantically aligned", () => {
+    expect(createTranslator("es-AR")("commands.errors.headerFileSyntax")).toBe(
+      "El header debe ser literal. La sintaxis @archivo de curl no está permitida."
+    );
+    expect(createTranslator("en")("commands.errors.headerFileSyntax")).toBe(
+      "The header must be literal. curl @file syntax is not allowed."
+    );
+  });
 });
