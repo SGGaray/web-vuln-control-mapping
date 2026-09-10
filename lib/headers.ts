@@ -45,23 +45,33 @@ function parseHeaderLine(line: string): HeaderEntry | null {
   return { name, value: line.slice(colon + 1).trim() };
 }
 
-function canStartFollowingResponse(response: ParsedHttpResponse): boolean {
+function isHttpOws(character: string | undefined): boolean {
+  return character === " " || character === "\t";
+}
+
+function isZeroContentLength(value: string): boolean {
+  let start = 0;
+  let end = value.length;
+  while (start < end && isHttpOws(value[start])) start += 1;
+  while (end > start && isHttpOws(value[end - 1])) end -= 1;
+  return end > start && /^0+$/.test(value.slice(start, end));
+}
+
+function canStartFollowingResponse(
+  response: ParsedHttpResponse,
+  contentLengths: string[],
+  hasTransferEncoding: boolean
+): boolean {
   const status = response.statusCode;
   if (status === undefined) return false;
   if ((status >= 100 && status < 200) || status === 204 || status === 304) {
     return true;
   }
 
-  const contentLengths = response.headers
-    .filter((header) => header.name.toLowerCase() === "content-length")
-    .map((header) => header.value.trim());
-  const hasTransferEncoding = response.headers.some(
-    (header) => header.name.toLowerCase() === "transfer-encoding"
-  );
   if (
     !hasTransferEncoding &&
     contentLengths.length > 0 &&
-    contentLengths.every((value) => /^0+$/.test(value))
+    contentLengths.every(isZeroContentLength)
   ) {
     return true;
   }
@@ -115,6 +125,8 @@ export function parseHttpResponses(raw: string): {
   let current: ParsedHttpResponse | null = null;
   let inHeaders = false;
   let atResponseBoundary = false;
+  let currentContentLengths: string[] = [];
+  let currentHasTransferEncoding = false;
 
   lines.forEach((line, index) => {
     const trimmed = line.trim();
@@ -144,7 +156,11 @@ export function parseHttpResponses(raw: string): {
       if (
         atResponseBoundary &&
         statusMatch &&
-        canStartFollowingResponse(current)
+        canStartFollowingResponse(
+          current,
+          currentContentLengths,
+          currentHasTransferEncoding
+        )
       ) {
         responses.push(current);
         current = {
@@ -155,6 +171,8 @@ export function parseHttpResponses(raw: string): {
         };
         inHeaders = true;
         atResponseBoundary = false;
+        currentContentLengths = [];
+        currentHasTransferEncoding = false;
         return;
       }
       if (trimmed !== "") atResponseBoundary = false;
@@ -167,8 +185,15 @@ export function parseHttpResponses(raw: string): {
     }
 
     const header = parseHeaderLine(line);
-    if (header) current.headers.push(header);
-    else {
+    if (header) {
+      current.headers.push(header);
+      const lowerName = header.name.toLowerCase();
+      if (lowerName === "content-length") {
+        currentContentLengths.push(line.slice(line.indexOf(":") + 1));
+      } else if (lowerName === "transfer-encoding") {
+        currentHasTransferEncoding = true;
+      }
+    } else {
       current.diagnostics.push({
         level: "warning",
         line: index + 1,

@@ -5,6 +5,18 @@ function status(raw: string, header: string) {
   return analyzeHeaderInput(raw).assessments.find((item) => item.header === header)?.status;
 }
 
+function concatenatedResponse(contentLength: string, newline: "\n" | "\r\n" = "\n") {
+  return [
+    "HTTP/1.1 200 OK",
+    `Content-Length:${contentLength}`,
+    "",
+    "HTTP/1.1 201 Created",
+    "Content-Security-Policy: default-src 'none'",
+    "X-Frame-Options: DENY",
+    "",
+  ].join(newline);
+}
+
 describe("HTTP response parser", () => {
   it("parses LF and CRLF header-only input and preserves duplicates", () => {
     const result = parseHttpResponses("Set-Cookie: a=1\r\nSet-Cookie: b=2\r\nX-Test: a:b");
@@ -104,6 +116,59 @@ describe("HTTP response parser", () => {
     expect(result.responses).toHaveLength(2);
     expect(result.selectedResponse?.statusCode).toBe(201);
     expect(result.selectedResponse?.headers).toEqual([{ name: "X-Test", value: "final" }]);
+  });
+
+  it.each(["\n", "\r\n"] as const)(
+    "rejects non-HTTP whitespace around Content-Length zero with %j line endings",
+    (newline) => {
+      const invalidValues = [
+        "\u000b0",
+        "\u000c0",
+        "\u00a00",
+        "\u20030",
+        "0\u000b",
+        "0\u000c",
+        "0\u00a0",
+        "0\u2003",
+      ];
+
+      invalidValues.forEach((value) => {
+        const raw = concatenatedResponse(value, newline);
+        const result = analyzeHeaderInput(raw);
+
+        expect(result.responses).toHaveLength(1);
+        expect(result.selectedResponse?.statusCode).toBe(200);
+        expect(status(raw, "Content-Security-Policy")).toBe("not-observed");
+        expect(status(raw, "X-Frame-Options")).toBe("not-observed");
+      });
+    }
+  );
+
+  it.each([
+    ["no OWS", "0"],
+    ["SP", " 0"],
+    ["HTAB", "\t0"],
+    ["mixed OWS", " \t0\t"],
+  ])("accepts HTTP OWS around Content-Length zero: %s", (_label, value) => {
+    const result = analyzeHeaderInput(concatenatedResponse(value));
+
+    expect(result.responses).toHaveLength(2);
+    expect(result.selectedResponse?.statusCode).toBe(201);
+  });
+
+  it.each([
+    ["0", true],
+    ["00", true],
+    ["000", true],
+    ["0junk", false],
+    ["00junk", false],
+    ["+0", false],
+    ["-0", false],
+  ])("applies strict decimal grammar to Content-Length %s", (value, promoted) => {
+    const result = analyzeHeaderInput(concatenatedResponse(value));
+
+    expect(result.responses).toHaveLength(promoted ? 2 : 1);
+    expect(result.selectedResponse?.statusCode).toBe(promoted ? 201 : 200);
   });
 
   it("does not treat a partially numeric Content-Length as bodyless framing", () => {
