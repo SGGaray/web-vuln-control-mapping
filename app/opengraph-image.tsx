@@ -73,7 +73,7 @@ export default function OpenGraphImage() {
           }}
         >
           <span>OWASP · NIST · ISO/IEC 27001</span>
-          <span>wvcm.vercel.app</span>
+          <span>wvcm.sggaray.com</span>
         </div>
       </div>
     ),
