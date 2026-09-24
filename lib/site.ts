@@ -1,4 +1,4 @@
-export const siteUrl = "https://wvcm.vercel.app";
+export const siteUrl = "https://wvcm.sggaray.com";
 export const siteName = "WVCM";
 export const siteTitle = "Web Vulnerability Control Mapping | WVCM";
 export const socialTitle = "WVCM — Web Vulnerability Control Mapping";

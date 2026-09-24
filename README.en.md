@@ -11,7 +11,7 @@ analysts, and people preparing an authorized assessment.
 
 ## Demo
 
-[Open the demo](https://wvcm.vercel.app)
+[Open the demo](https://wvcm.sggaray.com)
 
 ![Payload reference with filters](docs/hero.png)
 
