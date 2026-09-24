@@ -84,6 +84,27 @@ The automated suite covers parsing, API boundaries, command serialization,
 mappings, data fidelity, navigation, and accessible interaction. The Next.js
 build can run on Node.js 22 compatible hosting or on Vercel.
 
+## Cloudflare Workers
+
+WVCM deploys to Cloudflare Workers with the
+[OpenNext](https://opennext.js.org/cloudflare) adapter. Configuration lives in
+`wrangler.jsonc` and `open-next.config.ts`.
+
+```sh
+npm run preview
+```
+
+Builds the app for Workers and serves it locally on the Cloudflare runtime at
+`http://localhost:8787`.
+
+To deploy from Cloudflare Workers Builds:
+
+- Build command: `npx opennextjs-cloudflare build`
+- Deploy command: `npx opennextjs-cloudflare deploy`
+
+`public/_headers` mirrors the `next.config.mjs` security headers for static
+assets; if you change one, update the other.
+
 ## Authorized use
 
 Use WVCM only on systems you own or have written permission to test. The

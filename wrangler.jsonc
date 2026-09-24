@@ -1,0 +1,13 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "wvcm",
+	"main": ".open-next/worker.js",
+	"compatibility_date": "2026-09-21",
+	// nodejs_compat: required by the OpenNext adapter and by node:crypto in /api/hash (MD5).
+	// global_fetch_strictly_public: part of the OpenNext template; server-side fetch() may only reach public hosts.
+	"compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+	"assets": {
+		"directory": ".open-next/assets",
+		"binding": "ASSETS"
+	}
+}
