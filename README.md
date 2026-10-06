@@ -107,6 +107,14 @@ Para desplegar desde Cloudflare Workers Builds:
 `public/_headers` replica en los assets estáticos los headers de seguridad de
 `next.config.mjs`; si cambiás unos, actualizá los otros.
 
+La `Content-Security-Policy` de las páginas no está en `next.config.mjs`: su
+`script-src` lleva los hashes SHA-256 de los scripts inline que genera cada
+build. `npm run build` ejecuta `next build` y después `scripts/apply-csp.mjs`,
+que calcula esos hashes y agrega la política al routes manifest; si algún script
+inline queda sin cubrir, el build falla. `opennextjs-cloudflare build` corre
+`npm run build`, así que el deploy recibe la misma política. Con `next dev` no
+se envía CSP. La política y su justificación están en `csp.mjs`.
+
 ## Uso autorizado
 
 Usá WVCM sólo en sistemas propios o para los que tengas autorización escrita.

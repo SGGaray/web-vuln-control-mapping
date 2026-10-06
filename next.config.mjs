@@ -8,6 +8,10 @@ const __dirname = dirname(__filename);
 const nextConfig = {
   reactStrictMode: true,
   outputFileTracingRoot: __dirname,
+  // Content-Security-Policy is not set here: its script-src carries hashes of
+  // the inline scripts each build produces, so scripts/apply-csp.mjs adds it
+  // to the routes manifest after `next build` (see csp.mjs). These headers
+  // are mirrored in public/_headers for static assets.
   async headers() {
     return [
       {

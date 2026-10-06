@@ -105,6 +105,14 @@ To deploy from Cloudflare Workers Builds:
 `public/_headers` mirrors the `next.config.mjs` security headers for static
 assets; if you change one, update the other.
 
+The pages' `Content-Security-Policy` is not in `next.config.mjs`: its
+`script-src` carries SHA-256 hashes of the inline scripts each build produces.
+`npm run build` runs `next build` and then `scripts/apply-csp.mjs`, which
+computes those hashes and adds the policy to the routes manifest; if any inline
+script is left uncovered, the build fails. `opennextjs-cloudflare build` runs
+`npm run build`, so the deployment gets the same policy. `next dev` sends no
+CSP. The policy and the reasoning behind each directive live in `csp.mjs`.
+
 ## Authorized use
 
 Use WVCM only on systems you own or have written permission to test. The
