@@ -2,7 +2,7 @@
   "name": "web-vuln-control-mapping",
   "version": "1.0.0",
   "private": true,
-  "description": "A minimal, monochrome utility console for IT students and junior pentesters.",
+  "description": "Educational reference that maps common web vulnerabilities to technical signals, mitigations and security controls (OWASP Top 10, NIST SP 800-53, ISO/IEC 27001).",
   "scripts": {
     "dev": "next dev",
     "build": "next build && node scripts/apply-csp.mjs",
@@ -18,9 +18,9 @@
     "node": "22.x"
   },
   "dependencies": {
-    "@opennextjs/cloudflare": "^1.20.6",
+    "@opennextjs/cloudflare": "1.20.9",
     "lucide-react": "^1.23.0",
-    "next": "^15.5.24",
+    "next": "^15.5.28",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
@@ -31,13 +31,13 @@
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.4.19",
     "eslint": "^9.39.5",
-    "eslint-config-next": "^15.5.24",
+    "eslint-config-next": "^15.5.28",
     "postcss": "^8.5.23",
     "tailwindcss": "^3.4.6",
     "typescript": "^5.5.3",
     "vite": "^7.3.6",
     "vitest": "^4.1.11",
-    "wrangler": "^4.138.0"
+    "wrangler": "^4.151.2"
   },
   "overrides": {
     "next": {
