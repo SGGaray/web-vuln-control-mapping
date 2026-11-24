@@ -9,5 +9,8 @@
 	"assets": {
 		"directory": ".open-next/assets",
 		"binding": "ASSETS"
-	}
+	},
+	// Required by `wrangler preview`. Empty on purpose: the Worker has no vars or
+	// storage bindings to isolate, and assets/compatibility settings stay top-level.
+	"previews": {}
 }
