@@ -74,7 +74,7 @@ export default function HashTool() {
         <TextArea
           value={input}
           onChange={(e) => updateInput(e.target.value)}
-          placeholder="admin:password"
+          placeholder="hello world"
         />
       </Field>
 
