@@ -3,8 +3,9 @@
 // Every page in this app is prerendered at build time, and Next.js writes its
 // React Server Components payload into each HTML file as inline <script>
 // elements (`self.__next_f.push(...)`). Those scripts are the only inline code
-// the app ships: there are no inline styles, no event-handler attributes, no
-// third-party origins, and the only network call is same-origin (/api/hash).
+// the app ships: there are no inline styles, no event-handler attributes and
+// no third-party origins. The only network calls are Next's same-origin RSC
+// fetches; the Hash tool computes digests in the browser and sends nothing.
 //
 // The usual ways to allow those inline scripts both cost something here:
 //   - 'unsafe-inline' allows any injected inline script, which is the main
@@ -43,8 +44,8 @@ export const CSP_DIRECTIVES = Object.freeze({
   "img-src": ["'self'"],
   // The app loads no web fonts (system font stacks only).
   "font-src": ["'self'"],
-  // fetch("/api/hash") and the RSC payload Next fetches when the 404 page
-  // links back home. Both same-origin.
+  // The RSC payload Next fetches when the 404 page links back home
+  // (same-origin). The Hash tool makes no request.
   "connect-src": ["'self'"],
   "object-src": ["'none'"],
   // No <base> element is used.

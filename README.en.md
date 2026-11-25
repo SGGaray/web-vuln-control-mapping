@@ -21,7 +21,8 @@ analysts, and people preparing an authorized assessment.
 - Review the conditions each example requires and the signal it might produce.
 - Analyze HTTP response text and observe a limited set of security headers.
 - Encode and decode Base64, URLs, and JSON with data-fidelity checks.
-- Compute MD5, SHA-1, and SHA-256 hashes.
+- Compute MD5, SHA-1, and SHA-256 hashes in the browser. MD5 and SHA-1 are for
+  reference and compatibility only, not for passwords or signatures.
 - Build nmap and curl commands to copy and run in your own lab.
 - Consult conceptual mappings to OWASP Top 10, NIST SP 800-53, and ISO/IEC
   27001.
@@ -56,9 +57,15 @@ WVCM:
 
 ## Data flow
 
-Payload Reference, Header Analyzer, Base64, URL, JSON, and command generation
-run locally in the browser. Hash sends the text and selected algorithms to
-`POST /api/hash`; input is bounded and the application does not store it.
+All seven tools process input locally in the browser. Hash computes SHA-1 and
+SHA-256 with Web Crypto and MD5 with its own implementation (`lib/md5.ts`);
+the text is not sent to any server and is not stored. Web Crypto is only
+available in secure contexts (HTTPS or `localhost`); elsewhere, Hash shows an
+error instead of results.
+
+Local processing does not mean offline use: the application is downloaded from
+the server each time it is opened, and it has no service worker or offline
+cache.
 
 ## Local development
 
@@ -80,7 +87,7 @@ npm test
 npm run build
 ```
 
-The automated suite covers parsing, API boundaries, command serialization,
+The automated suite covers parsing, input limits, command serialization,
 mappings, data fidelity, navigation, and accessible interaction. The Next.js
 build can run on Node.js 22 compatible hosting or on Vercel.
 

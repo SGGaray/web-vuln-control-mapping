@@ -23,7 +23,8 @@ estudiantes, analistas y personas que preparan una evaluación autorizada.
   de seguridad.
 - Codificar y decodificar Base64, URLs y JSON con controles de fidelidad de
   datos.
-- Calcular hashes MD5, SHA-1 y SHA-256.
+- Calcular hashes MD5, SHA-1 y SHA-256 en el navegador. MD5 y SHA-1 sirven
+  sólo como referencia o por compatibilidad, no para contraseñas ni firmas.
 - Armar comandos nmap y curl para copiar y ejecutar en tu propio laboratorio.
 - Consultar mappings conceptuales con OWASP Top 10, NIST SP 800-53 e ISO/IEC
   27001.
@@ -57,10 +58,15 @@ WVCM:
 
 ## Flujo de datos
 
-Payload Reference, Analizador de headers HTTP, Base64, URL, JSON y la generación
-de comandos funcionan localmente en el navegador. Hash envía el texto y los
-algoritmos elegidos a `POST /api/hash`; la entrada está acotada y la aplicación
-no la almacena.
+Las siete herramientas procesan la entrada localmente en el navegador. Hash
+calcula SHA-1 y SHA-256 con Web Crypto y MD5 con una implementación propia
+(`lib/md5.ts`); el texto no se envía a ningún servidor ni se almacena. Web
+Crypto sólo está disponible en contextos seguros (HTTPS o `localhost`); fuera
+de ellos, Hash muestra un error en lugar de resultados.
+
+Procesamiento local no significa funcionamiento sin conexión: la aplicación se
+descarga desde el servidor cada vez que se abre y no incluye service worker ni
+caché offline.
 
 ## Desarrollo local
 
@@ -82,9 +88,10 @@ npm test
 npm run build
 ```
 
-La suite automatizada cubre parsing, límites de API, serialización de comandos,
-mappings, fidelidad de datos, navegación e interacción accesible. El build de
-Next.js puede ejecutarse en un hosting compatible con Node.js 22 o en Vercel.
+La suite automatizada cubre parsing, límites de entrada, serialización de
+comandos, mappings, fidelidad de datos, navegación e interacción accesible. El
+build de Next.js puede ejecutarse en un hosting compatible con Node.js 22 o en
+Vercel.
 
 ## Cloudflare Workers
 

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import HeaderAnalyzer from "@/components/tools/HeaderAnalyzer";
 import { buildCurlArgv } from "@/lib/commands";
-import { computeHashes } from "@/lib/hash";
+import { computeHashes } from "@/lib/hash-local";
 import { analyzeHeaderInput } from "@/lib/headers";
 import { encodeUtf8Base64 } from "@/lib/base64-text";
 import { formatJsonText } from "@/lib/json-text";
@@ -77,10 +77,10 @@ describe("localized technical-content parity", () => {
     expect(analyzeHeaderInput(input)).toEqual(before);
   });
 
-  it("keeps hash results independent of locale", () => {
-    const before = computeHashes("acción", ["sha256"]);
+  it("keeps hash results independent of locale", async () => {
+    const before = await computeHashes("acción", ["sha256"]);
     createTranslator("en")("hash.title");
-    expect(computeHashes("acción", ["sha256"])).toEqual(before);
+    expect(await computeHashes("acción", ["sha256"])).toEqual(before);
   });
 
   it("keeps generated argv independent of locale", () => {
