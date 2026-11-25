@@ -47,6 +47,10 @@ export function LocaleProvider({
 
   useEffect(() => {
     const stored = readStoredLocale(window.localStorage);
+    // The exported HTML is rendered in DEFAULT_LOCALE; the stored choice is
+    // only readable in the browser, after hydration. Applying it here costs one
+    // re-render on mount and keeps the hydrated markup equal to the static file.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time sync from localStorage after hydration (see above)
     setLocaleState(stored);
     updateDocumentLanguage(document, stored);
   }, []);

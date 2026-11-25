@@ -9,5 +9,10 @@
 # that is never exported sends them through not_found_handling too, so they
 # also get the 404 page with status 404. static-export.test.ts checks that the
 # target is not exported.
-/404       /404-page-not-exported  200
-/404.html  /404-page-not-exported  200
+#
+# Next.js 16 also exports the same page as out/_not-found.html (the internal
+# /_not-found route), so its names are rewritten the same way.
+/404                /404-page-not-exported  200
+/404.html           /404-page-not-exported  200
+/_not-found         /404-page-not-exported  200
+/_not-found.html    /404-page-not-exported  200
