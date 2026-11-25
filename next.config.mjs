@@ -8,24 +8,13 @@ const __dirname = dirname(__filename);
 const nextConfig = {
   reactStrictMode: true,
   outputFileTracingRoot: __dirname,
-  // Content-Security-Policy is not set here: its script-src carries hashes of
-  // the inline scripts each build produces, so scripts/apply-csp.mjs adds it
-  // to the routes manifest after `next build` (see csp.mjs). These headers
-  // are mirrored in public/_headers for static assets.
-  async headers() {
-    return [
-      {
-        source: "/:path*",
-        headers: [
-          { key: "X-Frame-Options", value: "DENY" },
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
-          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
-        ],
-      },
-    ];
-  },
+  // Static export: `next build` writes the whole site to out/, which
+  // Cloudflare serves as Workers static assets with no Worker code. Response
+  // headers live in public/_headers (copied to out/_headers), and
+  // scripts/apply-csp.mjs then adds the hashes of this build's inline scripts
+  // to its Content-Security-Policy. Next.js headers(), redirects(), rewrites,
+  // middleware and route handlers do not run in a static export.
+  output: "export",
 };
 
 export default nextConfig;

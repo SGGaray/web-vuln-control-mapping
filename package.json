@@ -6,19 +6,17 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build && node scripts/apply-csp.mjs",
-    "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit --incremental false",
     "test": "vitest run",
-    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload"
+    "preview": "npm run build && wrangler dev",
+    "deploy": "npm run build && wrangler deploy",
+    "upload": "npm run build && wrangler versions upload"
   },
   "engines": {
     "node": "22.x"
   },
   "dependencies": {
-    "@opennextjs/cloudflare": "1.20.17",
     "lucide-react": "^1.23.0",
     "next": "^15.5.29",
     "react": "^19.2.8",

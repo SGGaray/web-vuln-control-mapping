@@ -1,0 +1,13 @@
+# Workers static assets rewrites
+# (https://developers.cloudflare.com/workers/static-assets/redirects/).
+# Cloudflare evaluates these before matching a file.
+#
+# out/404.html must exist under that name: not_found_handling = "404-page"
+# (wrangler.jsonc) serves it, with status 404, for every path that matches no
+# file. Requested by its own name, though, it is an ordinary file and would be
+# served with status 200, a soft 404. Rewriting both of its names to a path
+# that is never exported sends them through not_found_handling too, so they
+# also get the 404 page with status 404. static-export.test.ts checks that the
+# target is not exported.
+/404       /404-page-not-exported  200
+/404.html  /404-page-not-exported  200

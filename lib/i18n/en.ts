@@ -5,6 +5,8 @@ export const en = {
   "document.title": "Web Vulnerability Control Mapping | WVCM",
   "common.copy": "Copy",
   "common.copied": "Copied",
+  "common.copyFailed": "Copy failed",
+  "common.copyFailedHint": "The browser did not allow copying to the clipboard. Select the text and copy it manually.",
   "common.input": "Input",
   "common.output": "Output",
   "common.result": "Result",

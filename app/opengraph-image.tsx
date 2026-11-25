@@ -1,6 +1,9 @@
 import { ImageResponse } from "next/og";
 import { siteName } from "@/lib/site";
 
+// Generated once at build time (static export).
+export const dynamic = "force-static";
+
 export const alt = "WVCM — referencia educativa de vulnerabilidades y controles web";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
