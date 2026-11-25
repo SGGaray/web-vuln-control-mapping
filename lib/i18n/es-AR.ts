@@ -3,6 +3,8 @@ export const esAR = {
   "document.title": "Web Vulnerability Control Mapping | WVCM",
   "common.copy": "Copiar",
   "common.copied": "Copiado",
+  "common.copyFailed": "No se pudo copiar",
+  "common.copyFailedHint": "El navegador no permitió copiar al portapapeles. Seleccioná el texto y copialo manualmente.",
   "common.input": "Entrada",
   "common.output": "Resultado",
   "common.result": "Resultado",

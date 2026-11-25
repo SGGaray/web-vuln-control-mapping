@@ -28,7 +28,8 @@ next-env.d.ts
 # local review material
 .review/
 
-# OpenNext / Cloudflare
+# Cloudflare (wrangler local state). /.open-next is the former OpenNext build
+# output; it stays ignored so a stale local copy is never committed.
 /.open-next
 /.wrangler
 .dev.vars*

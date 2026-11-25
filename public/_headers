@@ -1,11 +1,22 @@
-# Workers static assets bypass next.config.mjs headers(); keep this in sync with it.
-# https://developers.cloudflare.com/workers/static-assets/headers/
+# Response headers for every file Cloudflare serves from out/ (Workers static
+# assets, https://developers.cloudflare.com/workers/static-assets/headers/).
+# This file is the only source of the site's response headers.
+#
+# The Content-Security-Policy below has no script hashes and blocks the pages'
+# inline scripts. `npm run build` (scripts/apply-csp.mjs) replaces it in
+# out/_headers with the same policy plus the hashes of this build's inline
+# scripts. If that step is skipped, the site fails closed: no inline script runs.
+# The same step appends one immutable Cache-Control rule per /_next/static file
+# (see csp.mjs for why not a /_next/static/* wildcard).
 /*
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
   Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
-/_next/static/*
-  Cache-Control: public, max-age=31536000, immutable
+# The Open Graph image is exported without a file extension, so Cloudflare
+# cannot infer its type from the name.
+/opengraph-image
+  Content-Type: image/png

@@ -1,36 +1,33 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import nextConfig from "./next.config.mjs";
+import { buildContentSecurityPolicy, parseHeadersFile } from "./csp.mjs";
 
-function parseHeadersFile(source: string): Map<string, Record<string, string>> {
-  const rules = new Map<string, Record<string, string>>();
-  let current: Record<string, string> | undefined;
-  for (const line of source.split("\n")) {
-    if (!line.trim() || line.trim().startsWith("#")) continue;
-    if (!/^\s/.test(line)) {
-      current = {};
-      rules.set(line.trim(), current);
-      continue;
-    }
-    const separator = line.indexOf(":");
-    if (!current || separator === -1) throw new Error(`Unexpected _headers line: ${line}`);
-    current[line.slice(0, separator).trim()] = line.slice(separator + 1).trim();
-  }
-  return rules;
+function rulesOf(path: string): Map<string, Record<string, string>> {
+  return new Map(
+    parseHeadersFile(readFileSync(new URL(path, import.meta.url), "utf8")).map(({ path: rule, headers }: { path: string; headers: [string, string][] }) => [
+      rule,
+      Object.fromEntries(headers),
+    ])
+  );
 }
 
 describe("security headers", () => {
-  it("applies the Next.js response headers to static assets as well", async () => {
-    const [rule] = await nextConfig.headers!();
-    const expected = Object.fromEntries(rule.headers.map(({ key, value }) => [key, value]));
-    const staticRules = parseHeadersFile(
-      readFileSync(new URL("./public/_headers", import.meta.url), "utf8")
-    );
+  it("sends the security headers and the hash-less CSP on every static asset", () => {
+    // With the static export, public/_headers is the only source of response
+    // headers (formerly mirrored from next.config.mjs headers()).
+    const staticRules = rulesOf("./public/_headers");
 
-    expect(rule.source).toBe("/:path*");
-    expect(staticRules.get("/*")).toEqual(expected);
-    expect(staticRules.get("/_next/static/*")).toEqual({
-      "Cache-Control": "public, max-age=31536000, immutable",
+    // The immutable /_next/static rules are generated per file at build time
+    // (csp.mjs); a /_next/static/* wildcard would also cache 404s for a year.
+    expect([...staticRules.keys()]).toEqual(["/*", "/opengraph-image"]);
+    expect(staticRules.get("/*")).toEqual({
+      "X-Frame-Options": "DENY",
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+      "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
+      "Content-Security-Policy": buildContentSecurityPolicy([]),
     });
+    expect(staticRules.get("/opengraph-image")).toEqual({ "Content-Type": "image/png" });
   });
 });

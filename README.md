@@ -84,43 +84,55 @@ Abrí `http://localhost:3000`.
 ```sh
 npm run lint
 npm run typecheck
-npm test
 npm run build
+npm test
 ```
 
 La suite automatizada cubre parsing, límites de entrada, serialización de
-comandos, mappings, fidelidad de datos, navegación e interacción accesible. El
-build de Next.js puede ejecutarse en un hosting compatible con Node.js 22 o en
-Vercel.
+comandos, mappings, fidelidad de datos, navegación e interacción accesible.
+Después de `npm run build` también verifica el sitio exportado en `out/`:
+cobertura de la CSP, archivos publicados y reglas de `_headers` y `_redirects`.
 
-## Cloudflare Workers
+## Arquitectura y despliegue
 
-WVCM se despliega en Cloudflare Workers con el adapter
-[OpenNext](https://opennext.js.org/cloudflare). La configuración está en
-`wrangler.jsonc` y `open-next.config.ts`.
+WVCM es un sitio estático. `npm run build` ejecuta `next build` con
+`output: "export"`, que escribe el sitio completo en `out/`, y después
+`scripts/apply-csp.mjs`. Cloudflare publica `out/` como
+[Workers Static Assets](https://developers.cloudflare.com/workers/static-assets/)
+sin código de Worker: ninguna solicitud ejecuta código de la aplicación en el
+servidor. La configuración está en `wrangler.jsonc`.
 
 ```sh
 npm run preview
 ```
 
-Compila la app para Workers y la sirve localmente con el runtime de Cloudflare
-en `http://localhost:8787`.
+Compila el sitio y lo sirve localmente con el runtime de Cloudflare
+(`wrangler dev`) en `http://localhost:8787`. `next start` no se usa: no
+funciona con la exportación estática.
 
 Para desplegar desde Cloudflare Workers Builds:
 
-- Build command: `npx opennextjs-cloudflare build`
-- Deploy command: `npx opennextjs-cloudflare deploy`
+- Build command: vacío
+- Deploy command: `npm run deploy` (`npm run build` + `wrangler deploy`)
+- Preview command (ramas que no son de producción): `npm run upload`
+  (`npm run build` + `wrangler versions upload`)
 
-`public/_headers` replica en los assets estáticos los headers de seguridad de
-`next.config.mjs`; si cambiás unos, actualizá los otros.
+Los encabezados de respuesta salen sólo de `public/_headers`, que el build
+copia a `out/_headers`. `next.config.mjs` no define `headers()`: en una
+exportación estática no se ejecuta.
 
-La `Content-Security-Policy` de las páginas no está en `next.config.mjs`: su
-`script-src` lleva los hashes SHA-256 de los scripts inline que genera cada
-build. `npm run build` ejecuta `next build` y después `scripts/apply-csp.mjs`,
-que calcula esos hashes y agrega la política al routes manifest; si algún script
-inline queda sin cubrir, el build falla. `opennextjs-cloudflare build` corre
-`npm run build`, así que el deploy recibe la misma política. Con `next dev` no
-se envía CSP. La política y su justificación están en `csp.mjs`.
+La `Content-Security-Policy` lleva en `script-src` los hashes SHA-256 de los
+scripts inline que genera cada build. `public/_headers` contiene la misma
+política sin hashes, que bloquea esos scripts. `scripts/apply-csp.mjs` calcula
+los hashes a partir de los HTML exportados y los agrega a `out/_headers`. Si
+algún script inline queda sin cubrir, o si `out/_headers` superaría los
+límites de Cloudflare (100 reglas, 2.000 caracteres por línea), el build
+falla. Como Cloudflare sirve exactamente esos archivos, la página servida no
+puede tener scripts inline que la política no conozca. Con `next dev` no se
+envía CSP. La política y su justificación están en `csp.mjs`.
+
+`public/_redirects` hace que `/404` y `/404.html` respondan con estado 404, igual
+que cualquier ruta inexistente.
 
 ## Uso autorizado
 

@@ -10,6 +10,9 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-24.04
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      WRANGLER_SEND_METRICS: "false"
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -19,5 +22,12 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
-      - run: npm test
+      # Static export to out/ plus the CSP step; fails if an inline script is
+      # not covered or out/_headers would break Cloudflare's limits.
       - run: npm run build
+      # After the build, so the tests that check out/ (CSP coverage, the
+      # published file list, the 404 rewrite) run against this exact output.
+      - run: npm test
+      # Validates wrangler.jsonc and the assets that would be uploaded, with no
+      # account, token or network upload.
+      - run: npx wrangler deploy --dry-run --outdir "$RUNNER_TEMP/wrangler-dry-run"

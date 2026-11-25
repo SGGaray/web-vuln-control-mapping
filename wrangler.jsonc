@@ -1,16 +1,19 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "wvcm",
-	"main": ".open-next/worker.js",
 	"compatibility_date": "2026-09-21",
-	// nodejs_compat: required by the OpenNext adapter.
-	// global_fetch_strictly_public: part of the OpenNext template; server-side fetch() may only reach public hosts.
-	"compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+	// Static site: there is no Worker script ("main"), so no request runs
+	// application code and no compatibility flags are needed. Cloudflare serves
+	// out/ (built by `npm run build`) as static assets, applying out/_headers
+	// and out/_redirects.
 	"assets": {
-		"directory": ".open-next/assets",
-		"binding": "ASSETS"
+		"directory": "./out",
+		// Paths that match no file get out/404.html with status 404.
+		"not_found_handling": "404-page",
+		// "/" serves index.html; "/index.html" redirects to "/" (Cloudflare's default).
+		"html_handling": "auto-trailing-slash"
 	},
-	// Required by `wrangler preview`. Empty on purpose: the Worker has no vars or
-	// storage bindings to isolate, and assets/compatibility settings stay top-level.
+	// Required by `wrangler preview`. Empty on purpose: there are no vars or
+	// bindings to isolate, and the assets settings stay top-level.
 	"previews": {}
 }
