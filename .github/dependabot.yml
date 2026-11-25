@@ -1,0 +1,77 @@
+# Dependabot version updates for WVCM.
+# Reference: https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference
+#
+# - `cooldown` and `groups` here apply only to version updates. Security
+#   updates (enabled in the repository settings) are not delayed by the
+#   cooldown and still open as individual pull requests.
+# - Groups only take minor and patch updates, so every major version
+#   (Next 17, ESLint 10, Node types 24, Tailwind 4...) arrives in its own pull
+#   request and is reviewed on its own. No major version is ignored.
+# - Nothing here merges automatically.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Argentina/Buenos_Aires"
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+      semver-patch-days: 7
+      semver-minor-days: 14
+      semver-major-days: 30
+    groups:
+      # next and eslint-config-next are released together and must stay on
+      # the same version.
+      nextjs:
+        patterns:
+          - "next"
+          - "eslint-config-next"
+        update-types:
+          - "minor"
+          - "patch"
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+        update-types:
+          - "minor"
+          - "patch"
+      react-types:
+        patterns:
+          - "@types/react"
+          - "@types/react-dom"
+        update-types:
+          - "minor"
+          - "patch"
+      test-tooling:
+        dependency-type: "development"
+        patterns:
+          - "vitest"
+          - "vite"
+        update-types:
+          - "minor"
+          - "patch"
+      lint-tooling:
+        dependency-type: "development"
+        patterns:
+          - "eslint"
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Argentina/Buenos_Aires"
+    open-pull-requests-limit: 5
+    # The github-actions ecosystem supports only `default-days` (no per-semver
+    # cooldown), so one value covers patch, minor and major action releases.
+    cooldown:
+      default-days: 7

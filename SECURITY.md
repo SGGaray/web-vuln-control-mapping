@@ -46,3 +46,12 @@ vulnerabilities, and OSV reports none for the lockfile. Packages vendored
 inside `next` or bundled inside `wrangler` are not visible to these scanners;
 their release notes should be reviewed when they are updated. Dependency advisories
 are tracked through GitHub Dependabot alerts.
+
+Routine updates come from Dependabot version updates (`.github/dependabot.yml`):
+weekly, with a cooldown of 7 days for patch, 14 for minor and 30 for major
+npm releases (7 days for GitHub Actions), and grouped minor/patch updates for
+related packages. Major versions arrive as individual pull requests, nothing is
+merged automatically, and security updates are not delayed by the cooldown.
+GitHub Actions in `.github/workflows/` are pinned to full commit SHAs of their
+official releases. Dependabot alerts are not raised for actions pinned this
+way, so action advisories are reviewed when Dependabot proposes an update.
