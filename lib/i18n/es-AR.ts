@@ -121,10 +121,10 @@ export const esAR = {
   "headers.diagnostic.malformed": "Se ignoró una línea de header con formato inválido.",
 
   "hash.title": "Generador de hashes",
-  "hash.description": "Permite calcular hashes MD5, SHA-1 y SHA-256 mediante una ruta de API acotada.",
-  "hash.errors.network": "No se pudo acceder al servicio de hashing.",
-  "hash.errors.invalidResponse": "El servicio de hashing devolvió una respuesta inválida.",
-  "hash.errors.api": "La solicitud de hash falló{status}.",
+  "hash.description": "Permite calcular hashes MD5, SHA-1 y SHA-256 en el navegador, sin enviar el texto a un servidor. MD5 y SHA-1 sirven sólo como referencia o por compatibilidad: no son seguros para contraseñas, firmas ni diseños criptográficos nuevos.",
+  "hash.errors.tooLong": "La entrada supera el máximo de {max} caracteres.",
+  "hash.errors.unavailable": "Este navegador no permite calcular SHA-1 ni SHA-256 en esta página: Web Crypto requiere HTTPS.",
+  "hash.errors.failed": "No se pudo calcular el hash.",
 
   "base64.title": "Base64",
   "base64.description": "Permite convertir texto UTF-8 desde o hacia Base64. Se ignoran los espacios ASCII en Base64 y se rechaza UTF-8 inválido.",

@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { ToolShell, Notice } from "@/components/ui/ToolShell";
 import { Field, TextArea } from "@/components/ui/Field";
 import CopyButton from "@/components/ui/CopyButton";
-import { HashRequestError, requestHashes } from "@/lib/hash-request";
+import { ALLOWED_ALGORITHMS, HashError, MAX_TEXT_LENGTH, computeHashes } from "@/lib/hash-local";
 import {
   copyableResult,
   editResultInput,
@@ -16,52 +16,39 @@ import {
 } from "@/lib/result-state";
 import { useLocale } from "@/lib/i18n/context";
 
-// Node's crypto (used by the API route) supports MD5, which the browser's
-// Web Crypto does not. That is the main reason hashing lives on the server.
-const ALGORITHMS = ["md5", "sha1", "sha256"] as const;
+// Digests are computed in this tab (lib/hash-local.ts): Web Crypto for SHA-1
+// and SHA-256, lib/md5.ts for MD5. The text is never sent to a server.
+const ALGORITHMS = ALLOWED_ALGORITHMS;
 type Algo = (typeof ALGORITHMS)[number];
 
 export default function HashTool() {
   const { t } = useLocale();
   const [state, setState] = useState<ResultState<Record<Algo, string>>>(initialResultState);
-  const activeController = useRef<AbortController | null>(null);
   const input = state.input;
 
-  // Debounce the request so we are not hashing on every single keystroke.
+  // Debounce so a long text is not re-hashed on every keystroke. A result
+  // that settles after the input changed again is dropped by resolveResult
+  // and rejectResult, which compare versions.
   useEffect(() => {
     if (!input) {
       return;
     }
 
-    const requestVersion = state.version;
-    const controller = new AbortController();
-    activeController.current = controller;
-    const timer = setTimeout(async () => {
-      try {
-        const hashes = await requestHashes(input, ALGORITHMS, controller.signal);
-        setState((current) => resolveResult(current, requestVersion, hashes));
-      } catch (err) {
-        if (!(err instanceof HashRequestError && err.kind === "aborted")) {
-          const message = err instanceof HashRequestError
-            ? `${err.kind}:${err.status ?? ""}`
-            : "network:";
-          setState((current) => rejectResult(
-            current,
-            requestVersion,
-            message
-          ));
-        }
-      }
+    const version = state.version;
+    const timer = setTimeout(() => {
+      computeHashes(input, ALGORITHMS).then(
+        (hashes) => setState((current) => resolveResult(current, version, hashes)),
+        (err: unknown) =>
+          setState((current) =>
+            rejectResult(current, version, err instanceof HashError ? err.code : "DIGEST_FAILED")
+          )
+      );
     }, 250);
 
-    return () => {
-      clearTimeout(timer);
-      controller.abort();
-    };
+    return () => clearTimeout(timer);
   }, [input, state.version]);
 
   function updateInput(value: string) {
-    activeController.current?.abort();
     setState((current) => {
       const edited = editResultInput(current, value);
       return value ? startResult(edited) : edited;
@@ -80,15 +67,11 @@ export default function HashTool() {
 
       {state.status === "error" && (
         <Notice>
-          {state.message.startsWith("network:")
-            ? t("hash.errors.network")
-            : state.message.startsWith("api:")
-              ? t("hash.errors.api", {
-                  status: state.message.split(":")[1]
-                    ? ` (HTTP ${state.message.split(":")[1]})`
-                    : "",
-                })
-              : t("hash.errors.invalidResponse")}
+          {state.message === "TEXT_TOO_LONG"
+            ? t("hash.errors.tooLong", { max: MAX_TEXT_LENGTH })
+            : state.message === "WEB_CRYPTO_UNAVAILABLE"
+              ? t("hash.errors.unavailable")
+              : t("hash.errors.failed")}
         </Notice>
       )}
 

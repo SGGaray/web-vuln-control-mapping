@@ -123,10 +123,10 @@ export const en = {
   "headers.diagnostic.malformed": "Ignored a malformed header line.",
 
   "hash.title": "Hash Generator",
-  "hash.description": "Compute MD5, SHA-1, and SHA-256 digests. Hashing runs on the bounded API route.",
-  "hash.errors.network": "Could not reach the hashing service.",
-  "hash.errors.invalidResponse": "The hashing service returned an invalid response.",
-  "hash.errors.api": "Hash request failed{status}.",
+  "hash.description": "Compute MD5, SHA-1, and SHA-256 digests in the browser, without sending the text to a server. MD5 and SHA-1 are for reference and compatibility only: they are not safe for passwords, signatures, or new cryptographic designs.",
+  "hash.errors.tooLong": "Input exceeds the maximum length of {max} characters.",
+  "hash.errors.unavailable": "This browser cannot compute SHA-1 or SHA-256 on this page: Web Crypto requires HTTPS.",
+  "hash.errors.failed": "Could not compute the hash.",
 
   "base64.title": "Base64",
   "base64.description": "Convert Base64 to or from UTF-8 text. Base64 whitespace is ignored; invalid UTF-8 is rejected.",
