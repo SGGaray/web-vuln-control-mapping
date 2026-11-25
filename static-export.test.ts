@@ -10,14 +10,22 @@ const OUT = "out";
 // map, a dotfile, a report, a config file) fails the test until it is reviewed
 // and added here on purpose.
 const ALLOWED = [
-  /^(index|404)\.html$/,
-  /^index\.txt$/,
+  // Next.js 16 exports the not-found page twice: 404.html (served by
+  // not_found_handling) and _not-found.html (the internal /_not-found route).
+  /^(index|404|_not-found)\.html$/,
+  // RSC payloads: the full payload per route, plus Next.js 16's per-segment
+  // prefetch files (__next.<segment>.txt).
+  /^(index|_not-found)\.txt$/,
+  /^(_not-found\/)?__next\.[\w.-]+\.txt$/,
   /^(icon\.svg|opengraph-image|robots\.txt|sitemap\.xml)$/,
   /^_headers$/,
   /^_redirects$/,
-  /^_next\/static\/chunks\/[\w/.-]+\.js$/,
+  // Turbopack emits CSS under chunks/ and the icon under media/; webpack
+  // (`next build --webpack`) uses css/.
+  /^_next\/static\/chunks\/[\w/.-]+\.(js|css)$/,
   /^_next\/static\/css\/[\w-]+\.css$/,
-  /^_next\/static\/[\w-]+\/_(buildManifest|ssgManifest)\.js$/,
+  /^_next\/static\/media\/[\w.-]+\.svg$/,
+  /^_next\/static\/[\w-]+\/_(buildManifest|ssgManifest|clientMiddlewareManifest)\.js$/,
 ];
 
 // Text that must never reach a published file.
@@ -44,7 +52,7 @@ describe("public/_redirects", () => {
   const rules = redirectRules(readFileSync("public/_redirects", "utf8"));
 
   it("only rewrites the 404 page's own names to a single unexported path", () => {
-    expect(rules.map(([from]) => from)).toEqual(["/404", "/404.html"]);
+    expect(rules.map(([from]) => from)).toEqual(["/404", "/404.html", "/_not-found", "/_not-found.html"]);
     const targets = new Set(rules.map(([, to]) => to));
     expect(targets.size).toBe(1);
     for (const [, to, status] of rules) {
@@ -85,10 +93,10 @@ describe.skipIf(!existsSync(join(OUT, "_headers")))("static export (out/)", () =
   });
 
   it("keeps the 404 page out of search results and the home page indexable", () => {
-    const notFound = readFileSync(join(OUT, "404.html"), "utf8");
+    const notFoundPages = ["404.html", "_not-found.html"].filter((file) => files.includes(file)).map((file) => readFileSync(join(OUT, file), "utf8"));
     const home = readFileSync(join(OUT, "index.html"), "utf8");
-    expect(notFound).toMatch(/<meta name="robots" content="noindex"\/>/);
+    for (const notFound of notFoundPages) expect(notFound).toMatch(/<meta name="robots" content="noindex"\/>/);
     expect(home).not.toMatch(/name="robots"/);
-    for (const page of [notFound, home]) expect(page).toMatch(/^<!DOCTYPE html>(<!--[\w-]+-->)?<html lang="es-AR">/);
+    for (const page of [...notFoundPages, home]) expect(page).toMatch(/^<!DOCTYPE html>(<!--[\w-]+-->)?<html lang="es-AR">/);
   });
 });

@@ -24,7 +24,7 @@ involve a security impact can still be reported through GitHub Issues.
 This project does not currently operate a bug bounty program or guarantee a
 fixed response time.
 
-## Deployment and dependency posture (reviewed 2026-11-24)
+## Deployment and dependency posture (reviewed 2026-11-25)
 
 WVCM is a static export (`output: "export"`) published as Cloudflare Workers
 Static Assets. There is no Worker script and no server-side application code:
@@ -35,8 +35,8 @@ time and is not deployed.
 - **Shipped to browsers:** the client bundles built from `next`, `react`,
   `react-dom` and `lucide-react`. React and Next.js advisories that only
   affect server rendering, Server Actions or the image optimizer do not reach
-  a deployed code path, but Next.js 15 security support ends on 2027-01-31 and
-  client-side advisories still apply.
+  a deployed code path, but client-side advisories still apply. The site
+  runs on Next.js 16, the Active LTS line (https://nextjs.org/support-policy).
 - **Build, test and deploy tooling:** Next.js (build), Tailwind CSS, ESLint,
   Vitest and `wrangler`. They run in CI, in Cloudflare Workers Builds and on
   developer machines, and none of their code is published.

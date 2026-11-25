@@ -2,9 +2,11 @@
 //
 // Every page in this app is exported at build time, and Next.js writes its
 // React Server Components payload into each HTML file as inline <script>
-// elements (`self.__next_f.push(...)`). Those scripts are the only inline code
-// the app ships: there are no inline styles, no event-handler attributes and
-// no third-party origins. The only network calls are Next's same-origin RSC
+// elements (`self.__next_f.push(...)`), plus, with Turbopack (the default
+// bundler since Next.js 16), one bootstrap script that lists the page's
+// chunks (`globalThis.TURBOPACK.push(...)`). Those scripts are the only inline
+// code the app ships: there are no inline styles, no event-handler attributes
+// and no third-party origins. The only network calls are Next's same-origin RSC
 // fetches; the Hash tool computes digests in the browser and sends nothing.
 //
 // The usual ways to allow those inline scripts both cost something here:
