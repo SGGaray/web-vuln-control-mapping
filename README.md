@@ -27,7 +27,7 @@ estudiantes, analistas y personas que preparan una evaluación autorizada.
   sólo como referencia o por compatibilidad, no para contraseñas ni firmas.
 - Armar comandos nmap y curl para copiar y ejecutar en tu propio laboratorio.
 - Consultar mappings conceptuales con OWASP Top 10, NIST SP 800-53 e ISO/IEC
-  27001.
+  27001. 
 
 ## Herramientas incluidas
 
@@ -67,72 +67,6 @@ de ellos, Hash muestra un error en lugar de resultados.
 Procesamiento local no significa funcionamiento sin conexión: la aplicación se
 descarga desde el servidor cada vez que se abre y no incluye service worker ni
 caché offline.
-
-## Desarrollo local
-
-Requiere Node.js 22.
-
-```sh
-npm ci
-npm run dev
-```
-
-Abrí `http://localhost:3000`.
-
-## Validación
-
-```sh
-npm run lint
-npm run typecheck
-npm run build
-npm test
-```
-
-La suite automatizada cubre parsing, límites de entrada, serialización de
-comandos, mappings, fidelidad de datos, navegación e interacción accesible.
-Después de `npm run build` también verifica el sitio exportado en `out/`:
-cobertura de la CSP, archivos publicados y reglas de `_headers` y `_redirects`.
-
-## Arquitectura y despliegue
-
-WVCM es un sitio estático. `npm run build` ejecuta `next build` con
-`output: "export"`, que escribe el sitio completo en `out/`, y después
-`scripts/apply-csp.mjs`. Cloudflare publica `out/` como
-[Workers Static Assets](https://developers.cloudflare.com/workers/static-assets/)
-sin código de Worker: ninguna solicitud ejecuta código de la aplicación en el
-servidor. La configuración está en `wrangler.jsonc`.
-
-```sh
-npm run preview
-```
-
-Compila el sitio y lo sirve localmente con el runtime de Cloudflare
-(`wrangler dev`) en `http://localhost:8787`. `next start` no se usa: no
-funciona con la exportación estática.
-
-Para desplegar desde Cloudflare Workers Builds:
-
-- Build command: vacío
-- Deploy command: `npm run deploy` (`npm run build` + `wrangler deploy`)
-- Preview command (ramas que no son de producción): `npm run upload`
-  (`npm run build` + `wrangler versions upload`)
-
-Los encabezados de respuesta salen sólo de `public/_headers`, que el build
-copia a `out/_headers`. `next.config.mjs` no define `headers()`: en una
-exportación estática no se ejecuta.
-
-La `Content-Security-Policy` lleva en `script-src` los hashes SHA-256 de los
-scripts inline que genera cada build. `public/_headers` contiene la misma
-política sin hashes, que bloquea esos scripts. `scripts/apply-csp.mjs` calcula
-los hashes a partir de los HTML exportados y los agrega a `out/_headers`. Si
-algún script inline queda sin cubrir, o si `out/_headers` superaría los
-límites de Cloudflare (100 reglas, 2.000 caracteres por línea), el build
-falla. Como Cloudflare sirve exactamente esos archivos, la página servida no
-puede tener scripts inline que la política no conozca. Con `next dev` no se
-envía CSP. La política y su justificación están en `csp.mjs`.
-
-`public/_redirects` hace que `/404` y `/404.html` respondan con estado 404, igual
-que cualquier ruta inexistente.
 
 ## Uso autorizado
 
